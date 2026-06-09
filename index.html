@@ -357,7 +357,7 @@ async function apiFetch(path, body = null) {
 
 async function loadContacts() {
   try {
-    const data = await apiFetch(`/chat/findContacts/${INSTANCE}`, {
+    const data = await apiFetch(`/chat/findChats/${INSTANCE}`, {
   where: {}
 });
     const list = Array.isArray(data) ? data : (data.records || data.contacts || []);
