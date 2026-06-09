@@ -320,25 +320,46 @@ function toast(msg, type='') {
 }
 
 async function apiFetch(path, body = null) {
-  const cleanPath = path.replace('/' + INSTANCE, '');
+
   const opts = {
     method: body !== null ? 'POST' : 'GET',
-    mode: 'cors',
-    headers: { 
-        'Content-Type': 'application/json', 
-        'apikey': API_KEY,
-        'instance': INSTANCE
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': API_KEY
     }
   };
-  if (body !== null) opts.body = JSON.stringify(body);
-  const r = await fetch(`${BASE_URL}${cleanPath}`, opts);
-  if (!r.ok) throw new Error(`HTTP ${r.status}`);
-  return r.json();
+
+  if (body !== null) {
+    opts.body = JSON.stringify(body);
+  }
+
+  const url = BASE_URL + path;
+
+  console.log('URL:', url);
+
+  const response = await fetch(url, opts);
+
+  const text = await response.text();
+
+  console.log('STATUS:', response.status);
+  console.log('BODY:', text);
+
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${text}`);
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    return text;
+  }
 }
 
 async function loadContacts() {
   try {
-    const data = await apiFetch(`/chat/findContacts/${INSTANCE}`, {});
+    const data = await apiFetch(`/chat/findContacts/${INSTANCE}`, {
+  where: {}
+});
     const list = Array.isArray(data) ? data : (data.records || data.contacts || []);
     convs = list.filter(c => {
       const jid = c.id || c.remoteJid || c.jid || '';
