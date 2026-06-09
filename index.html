@@ -358,15 +358,20 @@ async function apiFetch(path, body = null) {
 async function loadContacts() {
   try {
     const data = await apiFetch(`/chat/findChats/${INSTANCE}`, {
-  where: {}
-});
-    const list = Array.isArray(data) ? data : (data.records || data.contacts || []);
-    convs = list.filter(c => {
-      const jid = c.id || c.remoteJid || c.jid || '';
-      return jid && jid.includes('@s.whatsapp.net');
+      where: {}
     });
+
+    console.log("CHATS:", data);
+
+    const list = Array.isArray(data)
+      ? data
+      : (data.records || data.contacts || data.chats || []);
+
+    convs = list;
+
     renderConvList();
     renderKanban();
+
   } catch(e) {
     console.error('Erro ao carregar contatos:', e);
     document.getElementById('convList').innerHTML = `<div class="conv-loading" style="color:var(--red)">Erro ao conectar na Hostinger.</div>`;
