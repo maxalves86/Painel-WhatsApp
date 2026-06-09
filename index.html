@@ -51,10 +51,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .sidebar-header{padding:14px 14px 10px;border-bottom:1px solid var(--border)}
 .sidebar-title{font-size:15px;font-weight:600;color:var(--text);margin-bottom:10px;display:flex;align-items:center;justify-content:space-between}
 .num-filter{display:flex;flex-direction:column;gap:3px}
-.nf-pill{display:flex;align-items:center;gap:7px;padding:5px 8px;border-radius:var(--radius-sm);cursor:pointer;font-size:12px;color:var(--text2);transition:background .12s}
-.nf-pill:hover{background:var(--surface2)}
-.nf-pill.active{background:var(--blue-light);color:var(--blue-dark);font-weight:500}
-.nf-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
 .search-bar{padding:8px 12px;border-bottom:1px solid var(--border)}
 .search-bar input{width:100%;padding:7px 10px 7px 32px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;background:var(--surface2);color:var(--text);position:relative}
 .search-bar input:focus{outline:none;border-color:var(--blue);background:var(--surface)}
@@ -75,13 +71,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .conv-name{font-size:13px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px}
 .conv-time{font-size:11px;color:var(--text3);flex-shrink:0}
 .conv-preview{font-size:12px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
-.conv-badges{display:flex;align-items:center;gap:4px;margin-top:2px;flex-wrap:wrap}
-.badge-unread{background:var(--blue);color:#fff;font-size:11px;font-weight:600;min-width:18px;height:18px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;padding:0 4px}
 .badge-st{font-size:10px;padding:2px 6px;border-radius:4px;font-weight:500}
 .badge-em{background:var(--blue-light);color:var(--blue-dark)}
 .badge-pen{background:var(--amber-light);color:var(--amber)}
 .badge-fin{background:var(--green-light);color:var(--green)}
-.badge-num{font-size:10px;padding:2px 5px;border-radius:4px;background:var(--surface2);color:var(--text2)}
 .conv-loading{padding:32px 16px;text-align:center;color:var(--text3);font-size:13px}
 .spin{display:inline-block;width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite;margin-bottom:8px}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -95,26 +88,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .header-actions{display:flex;gap:6px}
 .hbtn{display:flex;align-items:center;gap:5px;padding:6px 12px;font-size:12px;border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;color:var(--text2);background:var(--surface);transition:all .15s;font-weight:500}
 .hbtn:hover{background:var(--surface2);border-color:var(--text3)}
-.hbtn.primary{background:var(--blue);color:#fff;border-color:var(--blue)}
-.hbtn.primary:hover{background:var(--blue-dark)}
 .hbtn.success{background:var(--green-light);color:var(--green);border-color:var(--green)}
-.view-toggle{display:flex;background:var(--surface);border-bottom:1px solid var(--border);padding:0 16px}
-.vtab{padding:9px 14px;font-size:12px;cursor:pointer;border:none;background:none;color:var(--text2);border-bottom:2px solid transparent;display:flex;align-items:center;gap:5px;font-weight:500;transition:all .15s}
-.vtab.active{color:var(--blue);border-bottom-color:var(--blue)}
-.vtab:hover:not(.active){color:var(--text)}
 
 /* ── Chat ── */
 .messages-area{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:8px;background:var(--bg)}
 .messages-area::-webkit-scrollbar{width:4px}
 .messages-area::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
-.msg-row{display:flex}
+.msg-row{display:flex;width:100%}
 .msg-row.out{justify-content:flex-end}
 .msg-row.in{justify-content:flex-start}
 .msg{max-width:72%;padding:8px 12px;border-radius:14px;font-size:13px;line-height:1.55;word-break:break-word}
 .msg-in{background:var(--surface);color:var(--text);border-bottom-left-radius:4px;border:1px solid var(--border)}
 .msg-out{background:var(--blue);color:#fff;border-bottom-right-radius:4px}
-.msg-time{font-size:10px;opacity:.65;margin-top:4px;text-align:right}
-.msg-sender{font-size:11px;color:var(--text3);margin-bottom:2px;padding-left:2px}
 .msg-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--text3)}
 .msg-empty i{font-size:40px;opacity:.3}
 .msg-empty p{font-size:13px}
@@ -135,16 +120,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .kanban-col-title{font-size:12px;font-weight:600;color:var(--text2);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;padding:0 2px;text-transform:uppercase;letter-spacing:.4px}
 .k-cnt{background:var(--border);color:var(--text2);font-size:11px;font-weight:600;min-width:20px;height:20px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;padding:0 5px}
 .kcards{display:flex;flex-direction:column;gap:7px;min-height:60px}
-.kcard{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;cursor:grab;transition:box-shadow .15s,border-color .15s}
-.kcard:active{cursor:grabbing}
+.kcard{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;cursor:pointer;transition:box-shadow .15s,border-color .15s}
 .kcard:hover{border-color:var(--blue);box-shadow:0 2px 8px rgba(24,95,165,.1)}
-.kcard-name{font-size:13px;font-weight:500;color:var(--text);margin-bottom:3px;display:flex;align-items:center;gap:6px}
-.kcard-msg{font-size:12px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:7px}
-.kcard-footer{display:flex;justify-content:space-between;align-items:center}
-.kcard-num{font-size:10px;color:var(--text3);background:var(--surface2);padding:2px 6px;border-radius:4px}
-.kcard-time{font-size:10px;color:var(--text3)}
-.col-drop-hint{border:2px dashed var(--border);border-radius:var(--radius-sm);min-height:50px;text-align:center;padding:12px;font-size:12px;color:var(--text3);transition:all .2s}
-.col-drop-hint.over{border-color:var(--blue);background:var(--blue-light);color:var(--blue)}
+.kcard-name{font-size:13px;font-weight:500;color:var(--text);margin-bottom:3px}
+.kcard-msg{font-size:12px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 /* ── Right panel ── */
 .right-panel{background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
@@ -153,49 +132,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .rp-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;font-weight:600}
 .rp-val{font-size:13px;color:var(--text);line-height:1.5}
 .tag-wrap{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
-.tag{font-size:11px;padding:3px 9px;border-radius:20px;cursor:pointer;font-weight:500;transition:opacity .15s}
-.tag:hover{opacity:.8}
-.tag-vip{background:#fef3c7;color:#92400e}
+.tag{font-size:11px;padding:3px 9px;border-radius:20px;font-weight:500}
 .tag-novo{background:var(--blue-light);color:var(--blue-dark)}
-.tag-rec{background:var(--red-light);color:var(--red)}
-.tag-add{background:none;border:1px dashed var(--border);color:var(--text3)}
 .rp-select{width:100%;padding:7px 9px;font-size:12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);cursor:pointer}
-.rp-select:focus{outline:none;border-color:var(--blue)}
-.transfer-btn{width:100%;margin-top:8px;padding:7px;font-size:12px;background:none;border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;color:var(--text2);display:flex;align-items:center;justify-content:center;gap:5px;transition:all .15s;font-weight:500}
-.transfer-btn:hover{background:var(--surface2);border-color:var(--text2)}
-.note-item{background:var(--surface2);border-radius:var(--radius-sm);padding:8px 10px;font-size:12px;color:var(--text);margin-bottom:5px}
-.note-time{font-size:10px;color:var(--text3);margin-top:3px}
-.note-input-wrap{display:flex;gap:6px;margin-top:8px}
-.note-input-wrap input{flex:1;padding:6px 9px;font-size:12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text)}
-.note-input-wrap input:focus{outline:none;border-color:var(--blue)}
-.note-add-btn{padding:6px 10px;font-size:13px;background:var(--blue);color:#fff;border:none;border-radius:var(--radius-sm);cursor:pointer;display:flex;align-items:center}
 .rp-scroll{flex:1;overflow-y:auto;padding:12px 14px}
 .rp-scroll::-webkit-scrollbar{width:4px}
 .rp-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
-
-/* ── Modal ── */
-.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:200;align-items:center;justify-content:center}
-.modal-bg.open{display:flex}
-.modal{background:var(--surface);border-radius:var(--radius);padding:22px;width:300px;border:1px solid var(--border)}
-.modal h3{font-size:15px;font-weight:600;margin-bottom:16px;color:var(--text)}
-.form-group{margin-bottom:12px}
-.form-group label{display:block;font-size:12px;color:var(--text2);margin-bottom:5px;font-weight:500}
-.form-group input,.form-group select{width:100%;padding:8px 10px;font-size:13px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text)}
-.form-group input:focus,.form-group select:focus{outline:none;border-color:var(--blue)}
-.modal-btns{display:flex;gap:8px;margin-top:16px}
-.mbtn{flex:1;padding:8px;font-size:13px;border-radius:var(--radius-sm);cursor:pointer;font-weight:500}
-.mbtn-primary{background:var(--blue);color:#fff;border:none}
-.mbtn-primary:hover{background:var(--blue-dark)}
-.mbtn-cancel{background:none;border:1px solid var(--border);color:var(--text2)}
-.mbtn-cancel:hover{background:var(--surface2)}
 
 /* ── Toast ── */
 .toast{position:fixed;bottom:20px;right:20px;background:#1e293b;color:#f1f5f9;padding:10px 16px;border-radius:var(--radius-sm);font-size:13px;z-index:300;opacity:0;transition:opacity .25s;pointer-events:none;display:flex;align-items:center;gap:8px}
 .toast.show{opacity:1}
 .toast.success{background:#166534}
 .toast.error{background:#991b1b}
-
-/* ── Empty / placeholder ── */
 .no-conv{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:10px;color:var(--text3)}
 .no-conv i{font-size:48px;opacity:.25}
 .no-conv p{font-size:13px}
@@ -203,10 +151,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 </head>
 <body>
 
-<!-- ═══════════════ APP ═══════════════ -->
 <div class="app">
 
-<!-- Nav lateral -->
 <nav class="nav">
   <div class="nav-logo"><i class="ti ti-brand-whatsapp"></i></div>
   <button class="nav-btn active" onclick="setNavView('chat')" id="navChat">
@@ -217,24 +163,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <i class="ti ti-layout-columns"></i>
     <span class="tooltip">Kanban</span>
   </button>
-  <button class="nav-btn" onclick="setNavView('contatos')" id="navContatos">
-    <i class="ti ti-users"></i>
-    <span class="tooltip">Contatos</span>
-  </button>
   <div class="nav-spacer"></div>
-  <button class="nav-btn" onclick="openSettings()">
-    <i class="ti ti-settings"></i>
-    <span class="tooltip">Configurações</span>
-  </button>
-  <div class="agent-nav" onclick="openAgentModal()" title="Meu perfil">
+  <div class="agent-nav">
     <div class="status-ring">
-      <div class="agent-circle" id="navAgentCircle">JS</div>
+      <div class="agent-circle">MA</div>
     </div>
   </div>
 </nav>
 
-<!-- Sidebar -->
-<aside class="sidebar">
+<aside class="sidebar" id="sidebarArea">
   <div class="sidebar-header">
     <div class="sidebar-title">
       <span>Atendimento</span>
@@ -242,7 +179,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <i class="ti ti-refresh" style="font-size:13px"></i>
       </button>
     </div>
-    <div class="num-filter" id="numFilter"></div>
   </div>
   <div class="search-bar">
     <div class="search-wrap">
@@ -261,10 +197,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   </div>
 </aside>
 
-<!-- Main -->
 <main class="main" id="mainArea">
 
-  <!-- Chat header -->
   <div class="chat-header" id="chatHeader" style="display:none">
     <div class="conv-avatar" id="mainAvatar" style="width:40px;height:40px;font-size:14px;font-weight:600;background:#B5D4F4;color:#0C447C">--</div>
     <div class="chat-hinfo">
@@ -272,7 +206,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <div class="chat-hsub">
         <i class="ti ti-device-mobile" style="font-size:12px"></i>
         <span id="mainSub">–</span>
-        <span id="mainNumBadge" class="badge-num" style="margin-left:4px"></span>
         <span id="mainStatusBadge" class="badge-st badge-pen" style="margin-left:4px">Pendente</span>
       </div>
     </div>
@@ -283,30 +216,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     </div>
   </div>
 
-  <div class="view-toggle" id="viewToggle" style="display:none">
-    <button class="vtab active" onclick="setChatView('chat',this)"><i class="ti ti-message"></i> Chat</button>
-    <button class="vtab" onclick="setChatView('kanban',this)"><i class="ti ti-layout-columns"></i> Kanban geral</button>
-  </div>
-
-  <!-- Estado vazio -->
   <div class="no-conv" id="noConvPlaceholder">
-    <i class="ti ti-brand-whatsapp"></i>
+    <i class="ti ti-brand-whatsapp" style="font-size:48px; opacity:0.3;"></i>
     <p>Selecione uma conversa para começar</p>
   </div>
 
-  <!-- Chat view -->
   <div id="chatViewWrap" style="display:none;flex-direction:column;flex:1;overflow:hidden">
-    <div class="messages-area" id="msgArea">
-      <div class="msg-empty">
-        <i class="ti ti-message-off"></i>
-        <p>Nenhuma mensagem</p>
-      </div>
-    </div>
+    <div class="messages-area" id="msgArea"></div>
     <div class="input-area">
       <div class="input-tools">
-        <button class="itool" title="Emoji"><i class="ti ti-mood-smile"></i></button>
-        <button class="itool" title="Anexar arquivo"><i class="ti ti-paperclip"></i></button>
-        <button class="itool" title="Áudio"><i class="ti ti-microphone"></i></button>
+        <button class="itool"><i class="ti ti-mood-smile"></i></button>
+        <button class="itool"><i class="ti ti-paperclip"></i></button>
       </div>
       <div class="input-row">
         <textarea class="msg-input" id="msgInput" placeholder="Digite sua mensagem... (Enter para enviar)" onkeydown="handleKey(event)"></textarea>
@@ -318,18 +238,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     </div>
   </div>
 
-  <!-- Kanban view (geral, sem conversa selecionada) -->
   <div id="kanbanViewWrap" style="display:none;flex:1;overflow:auto">
-    <div class="kanban-view" id="kanbanBoard">
-      <div class="kanban-col" id="kcol-pendente" ondragover="dragOver(event)" ondrop="drop(event,'pendente')">
+    <div class="kanban-view">
+      <div class="kanban-col">
         <div class="kanban-col-title"><span>🕐 Pendente</span><span class="k-cnt" id="kcnt-pendente">0</span></div>
         <div class="kcards" id="kcards-pendente"></div>
       </div>
-      <div class="kanban-col" id="kcol-em_atendimento" ondragover="dragOver(event)" ondrop="drop(event,'em_atendimento')">
+      <div class="kanban-col">
         <div class="kanban-col-title"><span>💬 Em atendimento</span><span class="k-cnt" id="kcnt-em_atendimento">0</span></div>
         <div class="kcards" id="kcards-em_atendimento"></div>
       </div>
-      <div class="kanban-col" id="kcol-finalizado" ondragover="dragOver(event)" ondrop="drop(event,'finalizado')">
+      <div class="kanban-col">
         <div class="kanban-col-title"><span>✅ Finalizado</span><span class="k-cnt" id="kcnt-finalizado">0</span></div>
         <div class="kcards" id="kcards-finalizado"></div>
       </div>
@@ -338,187 +257,68 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 </main>
 
-<!-- Right panel -->
 <aside class="right-panel" id="rightPanel">
   <div class="rp-header"><i class="ti ti-info-circle"></i> Detalhes do contato</div>
-
-  <div class="rp-section" id="rpContactSection">
+  <div class="rp-section">
     <div class="rp-label">Nome</div>
     <div class="rp-val" id="rpName">–</div>
     <div class="rp-label" style="margin-top:10px">Número</div>
     <div class="rp-val" id="rpNum">–</div>
     <div class="rp-label" style="margin-top:10px">Instância</div>
-    <div class="rp-val" id="rpInstance">–</div>
+    <div class="rp-val" id="rpInstance">evolution-api-pktx</div>
   </div>
-
   <div class="rp-section">
     <div class="rp-label">Identificadores</div>
-    <div class="tag-wrap" id="rpTags">
-      <span class="tag tag-add" onclick="addTag()"><i class="ti ti-plus" style="font-size:11px"></i> Nova tag</span>
+    <div class="tag-wrap">
+      <span class="tag tag-novo">WhatsApp Oficial</span>
     </div>
   </div>
-
-  <div class="rp-section">
-    <div class="rp-label">Atendente responsável</div>
-    <select class="rp-select" id="rpAtendente">
-      <option>João Silva</option>
-      <option>Ana Costa</option>
-      <option>Pedro Rocha</option>
-      <option>Mariana Lima</option>
-    </select>
-    <button class="transfer-btn" onclick="transferConv()">
-      <i class="ti ti-arrow-right"></i> Transferir conversa
-    </button>
-  </div>
-
   <div class="rp-scroll">
-    <div class="rp-label">Notas internas</div>
-    <div id="rpNotes"></div>
-    <div class="note-input-wrap">
-      <input type="text" id="noteInput" placeholder="Adicionar nota..." onkeydown="if(event.key==='Enter')addNote()"/>
-      <button class="note-add-btn" onclick="addNote()"><i class="ti ti-plus"></i></button>
-    </div>
+    <div class="rp-label">Notas internas corporativas</div>
+    <div style="font-size:12px; color:var(--text2); font-style:italic;">Painel de Monitoramento Ativo</div>
   </div>
 </aside>
 
 </div>
 
-<!-- ═══════════════ MODALS ═══════════════ -->
-
-<!-- Modal agente -->
-<div class="modal-bg" id="agentModal">
-  <div class="modal">
-    <h3><i class="ti ti-user-circle" style="margin-right:6px"></i>Meu perfil</h3>
-    <div class="form-group">
-      <label>Seu nome</label>
-      <input type="text" id="agentNameInput" placeholder="Nome do atendente"/>
-    </div>
-    <div class="form-group">
-      <label>Número principal que você atende</label>
-      <select id="agentNumInput">
-        <option value="all">Todos os números</option>
-        <option value="Número 1">Número 1</option>
-        <option value="Número 2">Número 2</option>
-        <option value="Número 3">Número 3</option>
-      </select>
-    </div>
-    <div class="modal-btns">
-      <button class="mbtn mbtn-primary" onclick="saveAgent()">Salvar</button>
-      <button class="mbtn mbtn-cancel" onclick="closeModal('agentModal')">Cancelar</button>
-    </div>
-  </div>
-</div>
-
-<!-- Modal configurações -->
-<div class="modal-bg" id="settingsModal">
-  <div class="modal">
-    <h3><i class="ti ti-settings" style="margin-right:6px"></i>Configurações da API</h3>
-    <div class="form-group">
-      <label>URL da Evolution API</label>
-      <input type="text" id="cfgBaseUrl" placeholder="http://seu-ip:porta"/>
-    </div>
-    <div class="form-group">
-      <label>API Key</label>
-      <input type="password" id="cfgApiKey" placeholder="Sua chave de API"/>
-    </div>
-    <div class="form-group">
-      <label>Nome da Instância</label>
-      <input type="text" id="cfgInstance" placeholder="nome-da-instancia"/>
-    </div>
-    <div class="modal-btns">
-      <button class="mbtn mbtn-primary" onclick="saveSettings()">Salvar e reconectar</button>
-      <button class="mbtn mbtn-cancel" onclick="closeModal('settingsModal')">Cancelar</button>
-    </div>
-  </div>
-</div>
-
-<!-- Toast -->
 <div class="toast" id="toast"></div>
 
 <script>
-// ═══════════════════════════════════════
-// CONFIGURAÇÃO — edite aqui ou via modal
-// ═══════════════════════════════════════
-let BASE_URL    = "http://2.25.164.79:32770";
-let API_KEY     = "@Alvesm1986";
-let INSTANCE    = "evolution-api-pktx";
+let BASE_URL     = "http://2.25.164.79:32770";
+let API_KEY      = "@Alvesm1986";
+let INSTANCE     = "evolution-api-pktx";
 
-// ═══════════════════════════════════════
-// ESTADO DA APP
-// ═══════════════════════════════════════
-let convs       = [];     // lista de conversas/contatos
-let activeId    = null;   // jid ativo
+let convs       = [];     
+let activeId    = null;   
 let filterText  = '';
 let activeTab   = 'all';
-let activeNum   = 'all';
-let draggingId  = null;
-let agentName   = 'Meu Atendimento';
-let agentNum    = 'all';
-let refreshInterval = null;
-let notes       = {};     // notas por jid
-let tags        = {};     // tags por jid
-let statuses    = {};     // status kanban por jid
-let lastPreview = {};     // última preview por jid
+let currentView = 'chat'; 
+let statuses    = JSON.parse(localStorage.getItem('atend_status') || '{}');
 
-// ═══════════════════════════════════════
-// CONFIGURAÇÃO SALVA
-// ═══════════════════════════════════════
-function loadConfig() {
-  try {
-    const c = JSON.parse(localStorage.getItem('atend_cfg') || '{}');
-    if (c.baseUrl)  BASE_URL   = c.baseUrl;
-    if (c.apiKey)   API_KEY    = c.apiKey;
-    if (c.instance) INSTANCE   = c.instance;
-    if (c.agent)    agentName  = c.agent;
-    if (c.agentNum) agentNum   = c.agentNum;
-    notes    = JSON.parse(localStorage.getItem('atend_notes')   || '{}');
-    tags     = JSON.parse(localStorage.getItem('atend_tags')    || '{}');
-    statuses = JSON.parse(localStorage.getItem('atend_status')  || '{}');
-  } catch(e) {}
-}
-function saveConfig() {
-  localStorage.setItem('atend_cfg', JSON.stringify({ baseUrl: BASE_URL, apiKey: API_KEY, instance: INSTANCE, agent: agentName, agentNum }));
-}
-function persistNotes()   { localStorage.setItem('atend_notes',  JSON.stringify(notes));    }
-function persistTags()    { localStorage.setItem('atend_tags',   JSON.stringify(tags));     }
-function persistStatus()  { localStorage.setItem('atend_status', JSON.stringify(statuses)); }
-
-// ═══════════════════════════════════════
-// HELPERS
-// ═══════════════════════════════════════
 const avatarColors = [
   {bg:'#9FE1CB',c:'#085041'},{bg:'#B5D4F4',c:'#0C447C'},
-  {bg:'#FAC775',c:'#633806'},{bg:'#F4C0D1',c:'#72243E'},
-  {bg:'#C0DD97',c:'#27500A'},{bg:'#CECBF6',c:'#26215C'}
+  {bg:'#FAC775',c:'#633806'},{bg:'#F4C0D1',c:'#72243E'}
 ];
+
 function avc(id) {
   if (!id) return avatarColors[0];
   let h = 0;
   for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) & 0xFFFF;
   return avatarColors[h % avatarColors.length];
 }
+
 function initials(n) {
   if (!n) return '??';
   return n.trim().split(/\s+/).map(w => w[0] || '').join('').slice(0, 2).toUpperCase();
 }
-function nowTime() {
-  const d = new Date();
-  return `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
-}
-function statusLabel(s) { return {em_atendimento:'Em atendimento',pendente:'Pendente',finalizado:'Finalizado'}[s] || 'Pendente'; }
-function statusClass(s) { return {em_atendimento:'badge-em',pendente:'badge-pen',finalizado:'badge-fin'}[s] || 'badge-pen'; }
 
 function toast(msg, type='') {
   const el = document.getElementById('toast');
   el.textContent = msg;
-  el.className = 'toast show' + (type ? ' '+type : '');
-  clearTimeout(el._t);
-  el._t = setTimeout(() => el.classList.remove('show'), 3000);
+  el.className = 'toast show ' + type;
+  setTimeout(() => el.classList.remove('show'), 3000);
 }
 
-// ═══════════════════════════════════════
-// API CALLS
-// ═══════════════════════════════════════
 async function apiFetch(path, body = null) {
   const opts = {
     method: body !== null ? 'POST' : 'GET',
@@ -543,63 +343,13 @@ async function loadContacts() {
     renderKanban();
   } catch(e) {
     console.error('Erro ao carregar contatos:', e);
-    document.getElementById('convList').innerHTML = `
-      <div class="conv-loading" style="color:#A32D2D">
-        <i class="ti ti-alert-circle" style="font-size:24px;margin-bottom:8px;display:block"></i>
-        Erro de conexão.<br>
-        <span style="font-size:11px">Verifique as configurações.</span><br>
-        <button onclick="openSettings()" style="margin-top:10px;padding:5px 12px;font-size:12px;border:1px solid #A32D2D;border-radius:6px;cursor:pointer;color:#A32D2D;background:none">Configurações</button>
-      </div>`;
+    document.getElementById('convList').innerHTML = `<div class="conv-loading" style="color:var(--red)">Erro ao conectar na Hostinger.</div>`;
   }
 }
 
-async function loadMessages(jid) {
-  try {
-    const data = await apiFetch(`/chat/findMessages/${INSTANCE}`, {
-      where: { key: { remoteJid: jid } },
-      limit: 40
-    });
-    const msgs = Array.isArray(data) ? data : (data.records || data.messages || []);
-    renderMsgs(msgs);
-  } catch(e) {
-    console.error('Erro ao carregar mensagens:', e);
-    document.getElementById('msgArea').innerHTML = `<div class="msg-empty"><i class="ti ti-alert-circle"></i><p>Erro ao carregar mensagens</p></div>`;
-  }
-}
-
-async function sendMsg() {
-  const inp = document.getElementById('msgInput');
-  const text = inp.value.trim();
-  if (!text || !activeId) return;
-
-  const btn = document.getElementById('sendBtn');
-  btn.disabled = true;
-
-  try {
-    await apiFetch(`/message/sendText/${INSTANCE}`, {
-      number: activeId.split('@')[0],
-      options: { delay: 200, presence: 'composing' },
-      textMessage: { text }
-    });
-    inp.value = '';
-    toast('Mensagem enviada!', 'success');
-    await loadMessages(activeId);
-  } catch(e) {
-    toast('Erro ao enviar mensagem.', 'error');
-    console.error(e);
-  } finally {
-    btn.disabled = false;
-    inp.focus();
-  }
-}
-
-// ═══════════════════════════════════════
-// RENDER LISTA DE CONVERSAS
-// ═══════════════════════════════════════
 function getFiltered() {
   return convs.filter(c => {
     const jid = c.id || c.remoteJid || c.jid || '';
-    if (!jid) return false;
     const pureNum = jid.split('@')[0];
     const name = (c.name || c.pushName || pureNum).toLowerCase();
     const txtOk = !filterText || name.includes(filterText.toLowerCase()) || pureNum.includes(filterText);
@@ -610,388 +360,230 @@ function getFiltered() {
 
 function renderConvList() {
   const list = getFiltered();
+  const container = document.getElementById('convList');
+  if (!container) return;
+
   if (!list.length) {
-    document.getElementById('convList').innerHTML = `<div class="conv-loading">Nenhuma conversa encontrada.</div>`;
+    container.innerHTML = `<div class="conv-loading">Nenhum contato encontrado.</div>`;
     return;
   }
+
   let h = '';
   list.forEach(c => {
     const jid = c.id || c.remoteJid || c.jid;
-    const ac  = avc(jid);
+    const ac = avc(jid);
     const pureNum = jid.split('@')[0];
     const displayName = c.name || c.pushName || ('+' + pureNum);
-    const status = statuses[jid] || 'pendente';
-    const preview = lastPreview[jid] || 'Clique para ver mensagens';
+    const currentStatus = statuses[jid] || 'pendente';
     const safeNameAttr = displayName.replace(/'/g, "&#39;").replace(/"/g, "&quot;");
 
+    let badgeClass = 'badge-pen';
+    let badgeLabel = 'Pendente';
+    if(currentStatus === 'em_atendimento') { badgeClass = 'badge-em'; badgeLabel = 'Ativo'; }
+    if(currentStatus === 'finalizado') { badgeClass = 'badge-fin'; badgeLabel = 'Finalizado'; }
+
     h += `<div class="conv-item ${jid === activeId ? 'active' : ''}" onclick="selectConv('${jid}', '${safeNameAttr}')">
-      <div class="conv-avatar" style="background:${ac.bg};color:${ac.c};width:38px;height:38px;font-size:13px;font-weight:600;flex-shrink:0;border-radius:50%;display:flex;align-items:center;justify-content:center">${initials(displayName)}</div>
+      <div class="conv-avatar" style="background:${ac.bg};color:${ac.c}">${initials(displayName)}</div>
       <div class="conv-body">
         <div class="conv-top">
           <span class="conv-name">${displayName}</span>
         </div>
-        <div class="conv-preview">${preview}</div>
+        <div class="conv-preview">+${pureNum}</div>
         <div class="conv-badges">
-          <span class="badge-st ${statusClass(status)}">${statusLabel(status)}</span>
-          <span class="badge-num">+${pureNum}</span>
+          <span class="badge-st ${badgeClass}">${badgeLabel}</span>
         </div>
       </div>
     </div>`;
   });
-  document.getElementById('convList').innerHTML = h;
+  container.innerHTML = h;
 }
 
-// ═══════════════════════════════════════
-// SELECIONAR CONVERSA
-// ═══════════════════════════════════════
 async function selectConv(jid, name) {
   activeId = jid;
   const pureNum = jid.split('@')[0];
   const ac = avc(jid);
-  const status = statuses[jid] || 'pendente';
+
+  document.getElementById('noConvPlaceholder').style.display = 'none';
+  document.getElementById('chatHeader').style.display = 'flex';
+  if(currentView === 'chat') document.getElementById('chatViewWrap').style.display = 'flex';
 
   document.getElementById('mainAvatar').textContent = initials(name);
   document.getElementById('mainAvatar').style.background = ac.bg;
   document.getElementById('mainAvatar').style.color = ac.c;
   document.getElementById('mainName').textContent = name;
-  document.getElementById('mainSub').textContent = '+' + pureNum;
-  document.getElementById('mainNumBadge').textContent = INSTANCE;
-  document.getElementById('mainStatusBadge').className = 'badge-st ' + statusClass(status);
-  document.getElementById('mainStatusBadge').textContent = statusLabel(status);
-  document.getElementById('chatHeader').style.display = 'flex';
-  document.getElementById('viewToggle').style.display = 'flex';
-  document.getElementById('noConvPlaceholder').style.display = 'none';
-  document.getElementById('chatViewWrap').style.display = 'flex';
-  document.getElementById('kanbanViewWrap').style.display = 'none';
-  document.querySelectorAll('.vtab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.vtab')[0].classList.add('active');
+  document.getElementById('mainSub').textContent = `+${pureNum} • Cliente`;
 
   document.getElementById('rpName').textContent = name;
-  document.getElementById('rpNum').textContent = '+' + pureNum;
-  document.getElementById('rpInstance').textContent = INSTANCE;
-  renderRpTags(jid);
-  renderRpNotes(jid);
+  document.getElementById('rpNum').textContent = `+${pureNum}`;
+
+  const currentStatus = statuses[jid] || 'pendente';
+  updateStatusBadge(currentStatus);
 
   renderConvList();
+  document.getElementById('msgArea').innerHTML = `<div class="conv-loading"><div class="spin"></div><br>Carregando histórico...</div>`;
   await loadMessages(jid);
 }
 
-// ═══════════════════════════════════════
-// RENDER MENSAGENS
-// ═══════════════════════════════════════
+async function loadMessages(jid) {
+  try {
+    const data = await apiFetch(`/chat/findMessages/${INSTANCE}`, {
+      where: { key: { remoteJid: jid } },
+      limit: 30
+    });
+    const msgs = Array.isArray(data) ? data : (data.records || data.messages || []);
+    renderMsgs(msgs);
+  } catch(e) {
+    document.getElementById('msgArea').innerHTML = `<div class="msg-empty"><p>Nenhuma mensagem sincronizada.</p></div>`;
+  }
+}
+
 function renderMsgs(messages) {
   const area = document.getElementById('msgArea');
-  if (!Array.isArray(messages) || !messages.length) {
-    area.innerHTML = `<div class="msg-empty"><i class="ti ti-message-off"></i><p>Nenhuma mensagem encontrada</p></div>`;
+  if (!area) return;
+  if (!messages || messages.length === 0) {
+    area.innerHTML = `<div class="msg-empty"><p>Inicie a conversa digitando abaixo...</p></div>`;
     return;
   }
-  const ordered = [...messages].sort((a, b) => {
-    const ta = a.messageTimestamp || a.timestamp || 0;
-    const tb = b.messageTimestamp || b.timestamp || 0;
-    return ta - tb;
-  });
 
   let h = '';
+  const ordered = [...messages].reverse();
   ordered.forEach(m => {
     if (!m) return;
-    const dir = m.key?.fromMe ? 'out' : 'in';
-    let text = '';
+    const fromMe = m.key?.fromMe;
+    const dir = fromMe ? 'out' : 'in';
+    
+    let text = "";
     if (m.message) {
-      text = m.message.conversation
-          || m.message.extendedTextMessage?.text
-          || m.message.imageMessage?.caption
-          || m.message.videoMessage?.caption
-          || '';
+      text = m.message.conversation || m.message.extendedTextMessage?.text || m.message.imageMessage?.caption || m.content || m.body;
+    } else {
+      text = m.content || m.body || m.text;
     }
-    if (!text) text = m.content || m.body || m.text || '';
-    if (!text) text = dir === 'out' ? '📤 Mensagem enviada' : '📥 Mídia recebida';
-
-    const ts = m.messageTimestamp || m.timestamp;
-    const timeStr = ts ? new Date(ts * 1000).toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'}) : '';
+    if (!text) text = fromMe ? "[Mensagem Enviada]" : "[Mídia]";
 
     h += `<div class="msg-row ${dir}">
-      <div class="msg msg-${dir}">
-        ${text}
-        ${timeStr ? `<div class="msg-time">${timeStr}</div>` : ''}
-      </div>
+      <div class="msg msg-${dir}">${text}</div>
     </div>`;
   });
-
   area.innerHTML = h;
   area.scrollTop = area.scrollHeight;
+}
 
-  // salva preview
-  if (activeId && ordered.length) {
-    const last = ordered[ordered.length - 1];
-    let prev = '';
-    if (last.message) prev = last.message.conversation || last.message.extendedTextMessage?.text || '';
-    if (!prev) prev = last.content || last.body || last.text || '';
-    if (prev) { lastPreview[activeId] = prev.slice(0, 50); renderConvList(); }
+async function sendMsg() {
+  const inp = document.getElementById('msgInput');
+  const text = inp.value.trim();
+  if (!text || !activeId) return;
+
+  try {
+    await apiFetch(`/message/sendText/${INSTANCE}`, {
+      number: activeId.split('@')[0],
+      options: { delay: 100 },
+      textMessage: { text }
+    });
+    inp.value = '';
+    toast('Mensagem enviada!', 'success');
+    await loadMessages(activeId);
+  } catch(e) {
+    toast('Erro ao enviar.', 'error');
   }
 }
 
-// ═══════════════════════════════════════
-// KANBAN
-// ═══════════════════════════════════════
-function renderKanban() {
-  ['pendente','em_atendimento','finalizado'].forEach(col => {
-    const items = convs.filter(c => {
-      const jid = c.id || c.remoteJid || c.jid;
-      return jid && (statuses[jid] || 'pendente') === col;
-    });
-    const cnt = document.getElementById('kcnt-' + col);
-    const cards = document.getElementById('kcards-' + col);
-    if (!cnt || !cards) return;
-    cnt.textContent = items.length;
-    let h = '';
-    items.forEach(c => {
-      const jid = c.id || c.remoteJid || c.jid;
-      const ac = avc(jid);
-      const pureNum = jid.split('@')[0];
-      const name = c.name || c.pushName || ('+' + pureNum);
-      const preview = lastPreview[jid] || 'Sem mensagens';
-      const safeNameAttr = name.replace(/'/g, "&#39;").replace(/"/g, "&quot;");
-      h += `<div class="kcard" draggable="true" ondragstart="dragStart(event,'${jid}')" onclick="selectConv('${jid}','${safeNameAttr}')">
-        <div class="kcard-name">
-          <div style="width:22px;height:22px;border-radius:50%;background:${ac.bg};color:${ac.c};font-size:10px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">${initials(name)}</div>
-          ${name}
-        </div>
-        <div class="kcard-msg">${preview}</div>
-        <div class="kcard-footer">
-          <span class="kcard-num">${INSTANCE}</span>
-          <span class="kcard-time">+${pureNum}</span>
-        </div>
-      </div>`;
-    });
-    cards.innerHTML = h || `<div class="col-drop-hint" ondragover="dragOver(event)" ondrop="drop(event,'${col}')">Arraste aqui</div>`;
-  });
-}
-
-function dragStart(e, jid) { draggingId = jid; e.dataTransfer.effectAllowed = 'move'; }
-function dragOver(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }
-function drop(e, col) {
-  e.preventDefault();
-  if (!draggingId) return;
-  statuses[draggingId] = col;
-  persistStatus();
-  renderKanban();
-  renderConvList();
-  if (draggingId === activeId) {
-    document.getElementById('mainStatusBadge').className = 'badge-st ' + statusClass(col);
-    document.getElementById('mainStatusBadge').textContent = statusLabel(col);
-  }
-  draggingId = null;
-}
-
-// ═══════════════════════════════════════
-// STATUS
-// ═══════════════════════════════════════
 function setStatus(s) {
   if (!activeId) return;
   statuses[activeId] = s;
-  persistStatus();
-  document.getElementById('mainStatusBadge').className = 'badge-st ' + statusClass(s);
-  document.getElementById('mainStatusBadge').textContent = statusLabel(s);
+  localStorage.setItem('atend_status', JSON.stringify(statuses));
+  updateStatusBadge(s);
   renderConvList();
   renderKanban();
-  toast('Status atualizado: ' + statusLabel(s), 'success');
+  toast(`Status atualizado!`, 'success');
 }
 
-// ═══════════════════════════════════════
-// TAGS
-// ═══════════════════════════════════════
-const tagColors = ['tag-vip','tag-novo','tag-rec'];
-let tagColorIdx = 0;
-
-function renderRpTags(jid) {
-  const list = tags[jid] || [];
-  let h = list.map((t,i) => `<span class="tag ${tagColors[i % tagColors.length]}" onclick="removeTag('${jid}',${i})">${t} ×</span>`).join('');
-  h += `<span class="tag tag-add" onclick="addTag()"><i class="ti ti-plus" style="font-size:11px"></i> Nova tag</span>`;
-  document.getElementById('rpTags').innerHTML = h;
+function updateStatusBadge(s) {
+  const badge = document.getElementById('mainStatusBadge');
+  badge.className = 'badge-st';
+  if(s === 'pendente') { badge.classList.add('badge-pen'); badge.textContent = 'Pendente'; }
+  if(s === 'em_atendimento') { badge.classList.add('badge-em'); badge.textContent = 'Ativo'; }
+  if(s === 'finalizado') { badge.classList.add('badge-fin'); badge.textContent = 'Finalizado'; }
 }
 
-function addTag() {
-  if (!activeId) return;
-  const t = prompt('Nome da tag (ex: VIP, Reclamação, Urgente):');
-  if (!t || !t.trim()) return;
-  if (!tags[activeId]) tags[activeId] = [];
-  tags[activeId].push(t.trim());
-  persistTags();
-  renderRpTags(activeId);
-}
-
-function removeTag(jid, idx) {
-  if (!tags[jid]) return;
-  tags[jid].splice(idx, 1);
-  persistTags();
-  renderRpTags(jid);
-}
-
-// ═══════════════════════════════════════
-// NOTAS
-// ═══════════════════════════════════════
-function renderRpNotes(jid) {
-  const list = notes[jid] || [];
-  let h = '';
-  list.forEach(n => {
-    h += `<div class="note-item">${n.text}<div class="note-time">${n.time}</div></div>`;
+function renderKanban() {
+  const cols = { pendente: [], em_atendimento: [], finalizado: [] };
+  
+  convs.forEach(c => {
+    const jid = c.id || c.remoteJid || c.jid;
+    const st = statuses[jid] || 'pendente';
+    if(cols[st]) cols[st].push(c);
   });
-  document.getElementById('rpNotes').innerHTML = h;
+
+  ['pendente', 'em_atendimento', 'finalizado'].forEach(st => {
+    document.getElementById(`kcnt-${st}`).textContent = cols[st].length;
+    let h = '';
+    cols[st].forEach(c => {
+      const jid = c.id || c.remoteJid || c.jid;
+      const pureNum = jid.split('@')[0];
+      const name = c.name || c.pushName || ('+' + pureNum);
+      const safeNameAttr = name.replace(/'/g, "&#39;").replace(/"/g, "&quot;");
+      
+      h += `<div class="kcard" onclick="openChatFromKanban('${jid}', '${safeNameAttr}')">
+        <div class="kcard-name">${name}</div>
+        <div class="kcard-msg">+${pureNum}</div>
+      </div>`;
+    });
+    document.getElementById(`kcards-${st}`).innerHTML = h || '<div style="font-size:11px;color:var(--text3);text-align:center;padding:10px;">Vazio</div>';
+  });
 }
 
-function addNote() {
-  if (!activeId) return;
-  const inp = document.getElementById('noteInput');
-  const t = inp.value.trim();
-  if (!t) return;
-  if (!notes[activeId]) notes[activeId] = [];
-  notes[activeId].unshift({ text: t, time: nowTime() });
-  persistNotes();
-  inp.value = '';
-  renderRpNotes(activeId);
+function openChatFromKanban(jid, name) {
+  setNavView('chat');
+  selectConv(jid, name);
 }
 
-// ═══════════════════════════════════════
-// ATENDENTE / TRANSFERÊNCIA
-// ═══════════════════════════════════════
-function transferConv() {
-  const atend = document.getElementById('rpAtendente').value;
-  toast(`Transferido para ${atend}!`, 'success');
-}
-
-// ═══════════════════════════════════════
-// VIEWS
-// ═══════════════════════════════════════
 function setNavView(v) {
-  if (v === 'kanban') {
-    document.getElementById('noConvPlaceholder').style.display = 'none';
-    document.getElementById('chatHeader').style.display = 'none';
-    document.getElementById('viewToggle').style.display = 'none';
-    document.getElementById('chatViewWrap').style.display = 'none';
-    document.getElementById('kanbanViewWrap').style.display = 'flex';
-    renderKanban();
-  } else if (v === 'chat') {
-    if (activeId) {
-      document.getElementById('chatHeader').style.display = 'flex';
-      document.getElementById('viewToggle').style.display = 'flex';
-      document.getElementById('chatViewWrap').style.display = 'flex';
-      document.getElementById('kanbanViewWrap').style.display = 'none';
-    } else {
-      document.getElementById('noConvPlaceholder').style.display = 'flex';
-    }
-  }
-  document.querySelectorAll('.nav-btn[id^=nav]').forEach(b => b.classList.remove('active'));
-  const nb = document.getElementById('nav' + v.charAt(0).toUpperCase() + v.slice(1));
-  if (nb) nb.classList.add('active');
-}
+  currentView = v;
+  document.getElementById('navChat').classList.remove('active');
+  document.getElementById('navKanban').classList.remove('active');
 
-function setChatView(v, btn) {
-  document.querySelectorAll('.vtab').forEach(t => t.classList.remove('active'));
-  btn.classList.add('active');
-  if (v === 'chat') {
-    document.getElementById('chatViewWrap').style.display = 'flex';
+  if(v === 'chat') {
+    document.getElementById('navChat').classList.add('active');
+    document.getElementById('sidebarArea').style.display = 'flex';
     document.getElementById('kanbanViewWrap').style.display = 'none';
-  } else {
+    if(activeId) document.getElementById('chatViewWrap').style.display = 'flex';
+  } else if(v === 'kanban') {
+    document.getElementById('navKanban').classList.add('active');
+    document.getElementById('sidebarArea').style.display = 'none';
     document.getElementById('chatViewWrap').style.display = 'none';
-    document.getElementById('kanbanViewWrap').style.display = 'flex';
+    document.getElementById('kanbanViewWrap').style.display = 'block';
     renderKanban();
   }
 }
 
-function setTab(t, btn) {
-  activeTab = t;
+function setTab(tab, btn) {
+  activeTab = tab;
   document.querySelectorAll('.stab').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   renderConvList();
 }
 
-function filterConvs(v) { filterText = v; renderConvList(); }
+function filterConvs(v) {
+  filterText = v;
+  renderConvList();
+}
 
-// ═══════════════════════════════════════
-// MODALS
-// ═══════════════════════════════════════
-function openAgentModal() {
-  document.getElementById('agentNameInput').value = agentName;
-  document.getElementById('agentNumInput').value = agentNum;
-  document.getElementById('agentModal').classList.add('open');
-}
-function saveAgent() {
-  const n = document.getElementById('agentNameInput').value.trim();
-  if (!n) return;
-  agentName = n;
-  agentNum  = document.getElementById('agentNumInput').value;
-  document.getElementById('navAgentCircle').textContent = initials(n);
-  saveConfig();
-  closeModal('agentModal');
-  toast('Perfil salvo!', 'success');
-}
-function openSettings() {
-  document.getElementById('cfgBaseUrl').value  = BASE_URL;
-  document.getElementById('cfgApiKey').value   = API_KEY;
-  document.getElementById('cfgInstance').value = INSTANCE;
-  document.getElementById('settingsModal').classList.add('open');
-}
-function saveSettings() {
-  BASE_URL = document.getElementById('cfgBaseUrl').value.trim().replace(/\/$/, '');
-  API_KEY  = document.getElementById('cfgApiKey').value.trim();
-  INSTANCE = document.getElementById('cfgInstance').value.trim();
-  saveConfig();
-  closeModal('settingsModal');
-  toast('Configurações salvas!', 'success');
-  loadContacts();
-}
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-
-document.querySelectorAll('.modal-bg').forEach(m => {
-  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
-});
-
-// ═══════════════════════════════════════
-// TECLADO
-// ═══════════════════════════════════════
 function handleKey(e) {
-  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); }
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMsg();
+  }
 }
 
-// ═══════════════════════════════════════
-// NUM FILTER (display)
-// ═══════════════════════════════════════
-function renderNumFilter() {
-  const nums = [
-    { label: 'Todos', val: 'all', color: '#888' },
-    { label: 'Número 1', val: 'num1', color: '#185FA5' },
-    { label: 'Número 2', val: 'num2', color: '#3B6D11' },
-    { label: 'Número 3', val: 'num3', color: '#854F0B' },
-  ];
-  let h = '';
-  nums.forEach(n => {
-    h += `<div class="nf-pill ${activeNum === n.val ? 'active' : ''}" onclick="setActiveNum('${n.val}')">
-      <span class="nf-dot" style="background:${n.color}"></span>${n.label}
-    </div>`;
-  });
-  document.getElementById('numFilter').innerHTML = h;
-}
-function setActiveNum(v) { activeNum = v; renderNumFilter(); }
-
-// ═══════════════════════════════════════
-// AUTO REFRESH
-// ═══════════════════════════════════════
-function startRefresh() {
-  if (refreshInterval) clearInterval(refreshInterval);
-  refreshInterval = setInterval(() => {
-    if (activeId) loadMessages(activeId);
-    else loadContacts();
-  }, 6000);
-}
-
-// ═══════════════════════════════════════
-// INIT
-// ═══════════════════════════════════════
-loadConfig();
-document.getElementById('navAgentCircle').textContent = initials(agentName);
-renderNumFilter();
+// Inicializadores automáticos
 loadContacts();
-startRefresh();
+setInterval(() => {
+  if (activeId && currentView === 'chat') {
+    loadMessages(activeId);
+  } else {
+    loadContacts();
+  }
+}, 5000);
 </script>
 </body>
 </html>
