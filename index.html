@@ -14,20 +14,19 @@ function avc(id){
 }
 function initials(n){ return n ? n.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase() : '??'; }
 
+// Voltando para a rota que você provou que funciona e traz dados!
 async function loadContacts() {
     try {
-        const resChats = await fetch(`${BASE_URL}/chat/findChats/${INSTANCE_NAME}`, {
+        const resContacts = await fetch(`${BASE_URL}/chat/findContacts/${INSTANCE_NAME}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'apikey': API_KEY },
             body: JSON.stringify({})
         });
-        if (!resChats.ok) {
-            console.error("Erro na resposta do servidor");
-            return;
-        }
-        const data = await resChats.json();
         
-        // Garante que não vai travar se a resposta vier nula ou diferente
+        if (!resContacts.ok) return;
+        const data = await resContacts.json();
+        
+        // Mapeia os dados da rota findContacts sem travar
         if (Array.isArray(data)) {
             convs = data;
         } else if (data && data.records && Array.isArray(data.records)) {
@@ -38,7 +37,7 @@ async function loadContacts() {
         
         renderConvList();
     } catch (err) {
-        console.error("Erro ao carregar conversas:", err);
+        console.error("Erro ao carregar contatos:", err);
     }
 }
 
@@ -46,14 +45,9 @@ function renderConvList(){
   const listContainer = document.getElementById('convList');
   if (!listContainer) return;
 
-  if (!convs || convs.length === 0) {
-      listContainer.innerHTML = '<div style="padding:24px 16px;text-align:center;font-size:13px;color:var(--color-text-secondary)">Nenhuma conversa ativa encontrada...</div>';
-      return;
-  }
-
   const list = convs.filter(c => {
     if (!c) return false;
-    const jid = c.id || c.remoteJid || c.jid || '';
+    const jid = c.id || c.remoteJid || '';
     if(!jid) return false;
     const pureNum = jid.split('@')[0];
     const name = (c.name || c.pushName || pureNum).toLowerCase();
@@ -61,13 +55,18 @@ function renderConvList(){
   });
 
   let h='';
-  list.forEach(c=>{
-    const jid = c.id || c.remoteJid || c.jid;
-    const ac=avc(jid);
+  list.forEach(c => {
+    const jid = c.id || c.remoteJid;
+    if(!jid) return;
+    
+    const ac = avc(jid);
     const pureNum = jid.split('@')[0];
     const displayName = c.name || c.pushName || ("+" + pureNum);
     
-    h+=`<div class="conv-item ${jid===activeId?'active':''}" onclick="selectConv('${jid}', '${displayName.replace(/'/g, "\\'")}')">
+    // Tratamento para evitar que aspas no nome do contato quebrem o clique do HTML
+    const safeName = displayName.replace(/'/g, "\\'").replace(/"/g, '\\"');
+    
+    h += `<div class="conv-item ${jid === activeId ? 'active' : ''}" onclick="selectConv('${jid}', '${safeName}')">
       <div class="conv-avatar" style="background:${ac.bg};color:${ac.c}">${initials(displayName)}</div>
       <div class="conv-body">
         <div class="conv-top">
@@ -77,7 +76,8 @@ function renderConvList(){
       </div>
     </div>`;
   });
-  listContainer.innerHTML = h || '<div style="padding:24px 16px;text-align:center;font-size:13px;color:var(--color-text-secondary)">Nenhum contato corresponde à busca.</div>';
+  
+  listContainer.innerHTML = h || '<div style="padding:24px 16px;text-align:center;font-size:13px;color:var(--color-text-secondary)">Nenhum contato encontrado.</div>';
 }
 
 async function selectConv(id, name){
