@@ -14,19 +14,27 @@ function avc(id){
 }
 function initials(n){ return n ? n.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase() : '??'; }
 
-// Voltando para a rota que você provou que funciona e traz dados!
 async function loadContacts() {
     try {
+        // Adicionado cabeçalhos explícitos de CORS para o servidor liberar o sinal
         const resContacts = await fetch(`${BASE_URL}/chat/findContacts/${INSTANCE_NAME}`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'apikey': API_KEY },
+            mode: 'cors',
+            headers: { 
+                'Content-Type': 'application/json', 
+                'apikey': API_KEY,
+                'Accept': 'application/json'
+            },
             body: JSON.stringify({})
         });
         
-        if (!resContacts.ok) return;
+        if (!resContacts.ok) {
+            console.error("Servidor recusou a resposta:", resContacts.status);
+            return;
+        }
+        
         const data = await resContacts.json();
         
-        // Mapeia os dados da rota findContacts sem travar
         if (Array.isArray(data)) {
             convs = data;
         } else if (data && data.records && Array.isArray(data.records)) {
@@ -37,7 +45,7 @@ async function loadContacts() {
         
         renderConvList();
     } catch (err) {
-        console.error("Erro ao carregar contatos:", err);
+        console.error("Erro de conexão com a API da Hostinger:", err);
     }
 }
 
@@ -47,7 +55,7 @@ function renderConvList(){
 
   const list = convs.filter(c => {
     if (!c) return false;
-    const jid = c.id || c.remoteJid || '';
+    const jid = c.id || c.remoteJid || c.jid || '';
     if(!jid) return false;
     const pureNum = jid.split('@')[0];
     const name = (c.name || c.pushName || pureNum).toLowerCase();
@@ -56,14 +64,12 @@ function renderConvList(){
 
   let h='';
   list.forEach(c => {
-    const jid = c.id || c.remoteJid;
+    const jid = c.id || c.remoteJid || c.jid;
     if(!jid) return;
     
     const ac = avc(jid);
     const pureNum = jid.split('@')[0];
     const displayName = c.name || c.pushName || ("+" + pureNum);
-    
-    // Tratamento para evitar que aspas no nome do contato quebrem o clique do HTML
     const safeName = displayName.replace(/'/g, "\\'").replace(/"/g, '\\"');
     
     h += `<div class="conv-item ${jid === activeId ? 'active' : ''}" onclick="selectConv('${jid}', '${safeName}')">
@@ -77,7 +83,7 @@ function renderConvList(){
     </div>`;
   });
   
-  listContainer.innerHTML = h || '<div style="padding:24px 16px;text-align:center;font-size:13px;color:var(--color-text-secondary)">Nenhum contato encontrado.</div>';
+  listContainer.innerHTML = h || '<div style="padding:24px 16px;text-align:center;font-size:13px;color:var(--color-text-secondary)">Nenhum contato ativo encontrado na instância.</div>';
 }
 
 async function selectConv(id, name){
@@ -99,6 +105,7 @@ async function selectConv(id, name){
   try {
       const response = await fetch(`${BASE_URL}/chat/findMessages/${INSTANCE_NAME}`, {
           method: 'POST',
+          mode: 'cors',
           headers: { 'Content-Type': 'application/json', 'apikey': API_KEY },
           body: JSON.stringify({ "where": { "key": { "remoteJid": id } }, "limit": 30 })
       });
@@ -146,6 +153,7 @@ async function sendMsg(){
   try {
       const response = await fetch(`${BASE_URL}/message/sendText/${INSTANCE_NAME}`, {
           method: 'POST',
+          mode: 'cors',
           headers: { 'Content-Type': 'application/json', 'apikey': API_KEY },
           body: JSON.stringify({
               "number": activeId.split('@')[0],
