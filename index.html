@@ -9,7 +9,7 @@
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Segoe UI',sans-serif;background:#f0f2f5;height:100vh;overflow:hidden}
 .app{display:flex;height:100vh}
-.sidebar{width:320px;background:#fff;border-right:1px solid #e0e0e0;display:flex;flex-direction:column}
+.sidebar{width:350px;background:#fff;border-right:1px solid #e0e0e0;display:flex;flex-direction:column}
 .sidebar-header{padding:16px;border-bottom:1px solid #e0e0e0}
 .sidebar-header h2{font-size:18px;display:flex;justify-content:space-between;align-items:center}
 .search{padding:12px;border-bottom:1px solid #e0e0e0}
@@ -24,7 +24,7 @@ body{font-family:'Segoe UI',sans-serif;background:#f0f2f5;height:100vh;overflow:
 .avatar{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold;margin-right:12px}
 .conv-info{flex:1}
 .conv-name{font-weight:500;font-size:14px}
-.conv-number{font-size:12px;color:#666;margin-top:2px}
+.conv-number{font-size:11px;color:#666;margin-top:2px;font-family:monospace}
 .conv-badges{display:flex;gap:4px;margin-top:4px}
 .badge{font-size:10px;padding:2px 6px;border-radius:4px}
 .badge-pendente{background:#fff3cd;color:#856404}
@@ -35,9 +35,9 @@ body{font-family:'Segoe UI',sans-serif;background:#f0f2f5;height:100vh;overflow:
 .chat-header{background:#fff;padding:12px 16px;border-bottom:1px solid #e0e0e0;display:flex;align-items:center;gap:12px}
 .chat-info{flex:1}
 .chat-name{font-weight:600;font-size:16px}
-.chat-number{font-size:12px;color:#666}
+.chat-number{font-size:11px;color:#666;font-family:monospace}
 .status-buttons{display:flex;gap:8px}
-.status-btn{padding:6px 12px;border:1px solid #ddd;border-radius:20px;cursor:pointer;font-size:12px;background:#fff}
+.status-btn{padding:6px 12px;border:1px solid #ddd;border-radius:20px;cursor:pointer;font-size:11px;background:#fff}
 .status-btn:hover{background:#f0f0f0}
 .messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:8px}
 .message{max-width:70%;padding:8px 12px;border-radius:12px;font-size:13px}
@@ -46,15 +46,16 @@ body{font-family:'Segoe UI',sans-serif;background:#f0f2f5;height:100vh;overflow:
 .input-area{padding:12px;background:#fff;border-top:1px solid #e0e0e0;display:flex;gap:8px}
 .input-area textarea{flex:1;padding:10px;border:1px solid #ddd;border-radius:20px;resize:none;font-family:inherit;font-size:14px}
 .input-area button{background:#075e54;color:#fff;border:none;border-radius:20px;padding:0 20px;cursor:pointer}
-.right-panel{width:280px;background:#fff;border-left:1px solid #e0e0e0;padding:16px}
+.right-panel{width:300px;background:#fff;border-left:1px solid #e0e0e0;padding:16px;overflow-y:auto}
 .right-panel h4{font-size:14px;margin-bottom:12px;color:#666}
 .detail-row{margin-bottom:12px}
 .detail-label{font-size:11px;color:#999;margin-bottom:2px}
-.detail-value{font-size:13px;word-break:break-all}
+.detail-value{font-size:12px;word-break:break-all;font-family:monospace}
 .empty-state{display:flex;flex:1;align-items:center;justify-content:center;color:#999;flex-direction:column;gap:12px}
 .loading{padding:20px;text-align:center;color:#999}
 .spin{display:inline-block;width:20px;height:20px;border:2px solid #ddd;border-top-color:#075e54;border-radius:50%;animation:spin 0.8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
+.debug-panel{background:#f5f5f5;padding:8px;font-size:10px;font-family:monospace;border-top:1px solid #ddd;max-height:120px;overflow:auto}
 .toast{position:fixed;bottom:20px;right:20px;background:#333;color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;z-index:1000;opacity:0;transition:opacity 0.3s}
 .toast.show{opacity:1}
 </style>
@@ -115,11 +116,11 @@ body{font-family:'Segoe UI',sans-serif;background:#f0f2f5;height:100vh;overflow:
       <div class="detail-value" id="detailName">-</div>
     </div>
     <div class="detail-row">
-      <div class="detail-label">Remote JID</div>
-      <div class="detail-value" id="detailJid" style="font-size:11px">-</div>
+      <div class="detail-label">Remote JID (Raw)</div>
+      <div class="detail-value" id="detailJid" style="font-size:10px">-</div>
     </div>
     <div class="detail-row">
-      <div class="detail-label">Número</div>
+      <div class="detail-label">Número Extraído</div>
       <div class="detail-value" id="detailNumber">-</div>
     </div>
     <div class="detail-row">
@@ -129,6 +130,10 @@ body{font-family:'Segoe UI',sans-serif;background:#f0f2f5;height:100vh;overflow:
     <div class="detail-row">
       <div class="detail-label">Instância</div>
       <div class="detail-value">Novo teste</div>
+    </div>
+    <div class="debug-panel" id="debugPanel">
+      <strong>📡 Logs:</strong><br>
+      Aguardando...
     </div>
   </div>
 </div>
@@ -148,8 +153,15 @@ let currentFilter = '';
 let currentTab = 'all';
 let statusMap = JSON.parse(localStorage.getItem('chat_status') || '{}');
 
-// UTILITÁRIOS
-function showToast(msg, type = '') {
+function addDebugLog(msg) {
+  const panel = document.getElementById('debugPanel');
+  const timestamp = new Date().toLocaleTimeString();
+  panel.innerHTML += `<br>${timestamp} - ${msg}`;
+  panel.scrollTop = panel.scrollHeight;
+  console.log(msg);
+}
+
+function showToast(msg) {
   const toast = document.getElementById('toast');
   toast.textContent = msg;
   toast.className = 'toast show';
@@ -162,76 +174,98 @@ async function apiRequest(endpoint, method = 'POST', body = null) {
   const options = { method, headers };
   if (body) options.body = JSON.stringify(body);
   
+  addDebugLog(`📡 ${method} ${endpoint}`);
+  
   try {
     const resp = await fetch(url, options);
     const data = await resp.json();
+    addDebugLog(`✅ Status ${resp.status}`);
     if (!resp.ok) throw new Error(data.message || data.error || `HTTP ${resp.status}`);
     return data;
   } catch (err) {
-    console.error(`Erro ${endpoint}:`, err);
+    addDebugLog(`❌ Erro: ${err.message}`);
     throw err;
   }
 }
 
 function extractNumber(jid) {
   if (!jid) return '';
-  return jid.split('@')[0];
-}
-
-function formatNumber(num) {
-  if (!num) return '';
-  if (num.length === 11) return `+55 ${num.slice(0,2)} ${num.slice(2,7)} ${num.slice(7)}`;
-  if (num.length === 12) return `+${num.slice(0,2)} ${num.slice(2,7)} ${num.slice(7)}`;
-  if (num.length === 13) return `+${num.slice(0,2)} ${num.slice(2,4)} ${num.slice(4,9)} ${num.slice(9)}`;
-  return num;
-}
-
-function getAvatarColor(str) {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) hash = ((hash << 5) - hash) + str.charCodeAt(i);
-  const colors = ['#9FE1CB', '#B5D4F4', '#FAC775', '#F4C0D1', '#D4E0FF'];
-  return colors[Math.abs(hash) % colors.length];
+  // Remove qualquer sufixo @...
+  const cleaned = jid.split('@')[0];
+  // Se for um ID que parece número (apenas dígitos e +)
+  if (/^[\+\d]+$/.test(cleaned)) {
+    return cleaned;
+  }
+  return jid;
 }
 
 // CARREGAR CHATS
 async function loadChats() {
   try {
+    addDebugLog('🚀 Iniciando loadChats()');
     const encoded = encodeURIComponent(INSTANCE);
     const data = await apiRequest(`/chat/findChats/${encoded}`, 'POST', { where: {} });
     
+    addDebugLog(`📦 Dados recebidos: ${JSON.stringify(data).substring(0, 200)}...`);
+    
     let rawChats = [];
-    if (Array.isArray(data)) rawChats = data;
-    else if (data?.records) rawChats = data.records;
-    else if (data?.chats) rawChats = data.chats;
+    if (Array.isArray(data)) {
+      rawChats = data;
+      addDebugLog(`✅ É um array com ${data.length} itens`);
+    } else if (data?.records) {
+      rawChats = data.records;
+      addDebugLog(`✅ É data.records com ${data.records.length} itens`);
+    } else if (data?.chats) {
+      rawChats = data.chats;
+      addDebugLog(`✅ É data.chats com ${data.chats.length} itens`);
+    } else {
+      addDebugLog(`⚠️ Estrutura desconhecida: ${Object.keys(data)}`);
+      rawChats = [];
+    }
+    
+    // Mostrar estrutura do primeiro chat para debug
+    if (rawChats.length > 0) {
+      addDebugLog(`📋 Primeiro chat: ${JSON.stringify(rawChats[0])}`);
+    }
     
     chats = rawChats.map(chat => {
-      const jid = chat.remoteJid || chat.id || chat.jid;
+      // Tentar diferentes formas de obter o remoteJid
+      const jid = chat.remoteJid || chat.id || chat.jid || chat.remoteJidAlt || '';
       const number = extractNumber(jid);
-      const name = chat.name || chat.pushName || chat.senderName || number;
-      const isBot = name === 'BOT' || chat.pushName === 'BOT';
+      
+      // Tentar diferentes formas de obter o nome
+      const name = chat.name || chat.pushName || chat.senderName || chat.contactName || number;
+      
+      const isBot = name === 'BOT' || chat.pushName === 'BOT' || name?.toLowerCase().includes('bot');
+      
+      addDebugLog(`📞 Processando: JID=${jid} | Nome=${name} | Número=${number}`);
       
       return {
         jid: jid,
         number: number,
         name: name,
         isBot: isBot,
-        lastMessage: chat.lastMessage?.text || '',
-        timestamp: chat.timestamp || Date.now()
+        rawData: chat
       };
     });
     
     // Remove duplicatas
     const unique = new Map();
-    chats.forEach(c => { if (c.jid && !unique.has(c.jid)) unique.set(c.jid, c); });
+    chats.forEach(c => { 
+      if (c.jid && !unique.has(c.jid)) {
+        unique.set(c.jid, c);
+      }
+    });
     chats = Array.from(unique.values());
     
-    console.log('Chats carregados:', chats);
+    addDebugLog(`✅ ${chats.length} chats processados`);
     renderChatList();
     
     if (chats.length === 0) showToast('Nenhuma conversa encontrada');
     else showToast(`${chats.length} conversas carregadas`);
+    
   } catch (err) {
-    console.error(err);
+    addDebugLog(`❌ ERRO FATAL: ${err.message}`);
     document.getElementById('convList').innerHTML = `<div class="loading">❌ Erro: ${err.message}</div>`;
   }
 }
@@ -266,7 +300,7 @@ function renderChatList() {
         <div class="avatar" style="background:${bgColor}">${chat.name.substring(0,2).toUpperCase()}</div>
         <div class="conv-info">
           <div class="conv-name">${chat.isBot ? '🤖 ' : ''}${escapeHtml(chat.name)}</div>
-          <div class="conv-number">${formatNumber(chat.number)}</div>
+          <div class="conv-number">${escapeHtml(chat.number)}</div>
           <div class="conv-badges">
             <span class="badge ${statusClass}">${statusText}</span>
             ${chat.isBot ? '<span class="badge badge-bot">🤖 Bot</span>' : ''}
@@ -278,7 +312,15 @@ function renderChatList() {
   container.innerHTML = html;
 }
 
+function getAvatarColor(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) hash = ((hash << 5) - hash) + str.charCodeAt(i);
+  const colors = ['#9FE1CB', '#B5D4F4', '#FAC775', '#F4C0D1', '#D4E0FF'];
+  return colors[Math.abs(hash) % colors.length];
+}
+
 function escapeHtml(text) {
+  if (!text) return '';
   const div = document.createElement('div');
   div.textContent = text;
   return div.innerHTML;
@@ -286,48 +328,67 @@ function escapeHtml(text) {
 
 // SELECIONAR CHAT
 async function selectChat(jid) {
+  addDebugLog(`🔍 Selecionando chat: ${jid}`);
+  
   const chat = chats.find(c => c.jid === jid);
-  if (!chat) return;
+  if (!chat) {
+    addDebugLog(`❌ Chat não encontrado para JID: ${jid}`);
+    return;
+  }
   
   currentChat = chat;
+  addDebugLog(`✅ Chat selecionado: ${chat.name} | Número: ${chat.number}`);
   
   // Atualizar UI
   document.getElementById('chatHeader').style.display = 'flex';
   document.getElementById('inputArea').style.display = 'flex';
   document.getElementById('chatName').textContent = chat.isBot ? `🤖 ${chat.name}` : chat.name;
-  document.getElementById('chatNumber').textContent = formatNumber(chat.number);
+  document.getElementById('chatNumber').textContent = chat.number;
   document.getElementById('detailName').textContent = chat.name;
   document.getElementById('detailJid').textContent = chat.jid;
-  document.getElementById('detailNumber').textContent = formatNumber(chat.number);
-  document.getElementById('detailType').textContent = chat.isBot ? '🤖 Bot' : '👤 Contato real';
+  document.getElementById('detailNumber').textContent = chat.number;
+  document.getElementById('detailType').textContent = chat.isBot ? '🤖 Bot' : '👤 Contato';
   
   const bgColor = getAvatarColor(chat.jid);
   document.getElementById('headerAvatar').style.background = bgColor;
   document.getElementById('headerAvatar').textContent = chat.name.substring(0,2).toUpperCase();
   
   // Carregar mensagens
-  document.getElementById('messagesArea').innerHTML = '<div class="loading"><div class="spin"></div><br>Carregando...</div>';
-  await loadMessages(jid);
+  document.getElementById('messagesArea').innerHTML = '<div class="loading"><div class="spin"></div><br>Carregando mensagens...</div>';
+  await loadMessages(chat.jid);
   
   renderChatList();
 }
 
 async function loadMessages(jid) {
   try {
+    addDebugLog(`📨 Buscando mensagens para: ${jid}`);
     const encoded = encodeURIComponent(INSTANCE);
     const data = await apiRequest(`/chat/findMessages/${encoded}`, 'POST', {
       where: { remoteJid: jid },
       limit: 50
     });
     
+    addDebugLog(`📦 Resposta mensagens: ${JSON.stringify(data).substring(0, 200)}...`);
+    
     let messages = [];
-    if (data?.messages && Array.isArray(data.messages)) messages = data.messages;
-    else if (Array.isArray(data)) messages = data;
-    else if (data?.records) messages = data.records;
+    if (data?.messages && Array.isArray(data.messages)) {
+      messages = data.messages;
+      addDebugLog(`✅ messages array com ${messages.length}`);
+    } else if (Array.isArray(data)) {
+      messages = data;
+      addDebugLog(`✅ array direto com ${messages.length}`);
+    } else if (data?.records && Array.isArray(data.records)) {
+      messages = data.records;
+      addDebugLog(`✅ records array com ${messages.length}`);
+    } else {
+      addDebugLog(`⚠️ Estrutura inesperada: ${Object.keys(data)}`);
+      messages = [];
+    }
     
     renderMessages(messages);
   } catch (err) {
-    console.error(err);
+    addDebugLog(`❌ Erro loadMessages: ${err.message}`);
     document.getElementById('messagesArea').innerHTML = '<div class="empty-state">❌ Erro ao carregar mensagens</div>';
   }
 }
@@ -345,7 +406,12 @@ function renderMessages(messages) {
     const isFromMe = msg.key?.fromMe === true || msg.fromMe === true;
     const direction = isFromMe ? 'out' : 'in';
     
-    let text = msg.message?.conversation || msg.message?.extendedTextMessage?.text || msg.text || msg.body || msg.content;
+    let text = msg.message?.conversation || 
+               msg.message?.extendedTextMessage?.text || 
+               msg.text || 
+               msg.body || 
+               msg.content;
+               
     if (!text && msg.message?.imageMessage) text = '📷 Imagem';
     if (!text && msg.message?.audioMessage) text = '🎵 Áudio';
     if (!text && msg.message?.documentMessage) text = '📎 Documento';
@@ -356,18 +422,21 @@ function renderMessages(messages) {
   
   container.innerHTML = html;
   container.scrollTop = container.scrollHeight;
+  addDebugLog(`✅ ${messages.length} mensagens renderizadas`);
 }
 
 // ENVIAR MENSAGEM
 async function sendMessage() {
   if (!currentChat) {
-    showToast('Selecione uma conversa primeiro', 'error');
+    showToast('Selecione uma conversa primeiro');
     return;
   }
   
   const input = document.getElementById('messageInput');
   const text = input.value.trim();
   if (!text) return;
+  
+  addDebugLog(`📤 Enviando para ${currentChat.number}: "${text}"`);
   
   try {
     const encoded = encodeURIComponent(INSTANCE);
@@ -378,7 +447,8 @@ async function sendMessage() {
     });
     
     input.value = '';
-    showToast('Mensagem enviada!', 'success');
+    showToast('Mensagem enviada!');
+    addDebugLog(`✅ Mensagem enviada com sucesso`);
     
     // Adicionar mensagem temporária
     const container = document.getElementById('messagesArea');
@@ -386,11 +456,11 @@ async function sendMessage() {
     container.innerHTML += `<div class="message out">${escapeHtml(text)}</div>`;
     container.scrollTop = container.scrollHeight;
     
-    // Recarregar mensagens depois
+    // Recarregar mensagens
     setTimeout(() => loadMessages(currentChat.jid), 1500);
   } catch (err) {
-    showToast(`Erro: ${err.message}`, 'error');
-    console.error(err);
+    addDebugLog(`❌ Falha ao enviar: ${err.message}`);
+    showToast(`Erro: ${err.message}`);
   }
 }
 
@@ -400,7 +470,9 @@ function updateStatus(newStatus) {
   statusMap[currentChat.jid] = newStatus;
   localStorage.setItem('chat_status', JSON.stringify(statusMap));
   renderChatList();
-  showToast(`Status alterado para ${newStatus === 'pendente' ? 'Pendente' : newStatus === 'em_atendimento' ? 'Em atendimento' : 'Finalizado'}`);
+  const statusText = newStatus === 'pendente' ? 'Pendente' : newStatus === 'em_atendimento' ? 'Em atendimento' : 'Finalizado';
+  showToast(`Status: ${statusText}`);
+  addDebugLog(`📝 Status alterado para ${statusText}`);
 }
 
 // FILTROS
@@ -425,7 +497,7 @@ async function loadAll() {
 // INICIAR
 loadChats();
 
-// Auto-refresh a cada 15 segundos
+// Auto-refresh
 setInterval(() => {
   loadChats();
   if (currentChat) loadMessages(currentChat.jid);
