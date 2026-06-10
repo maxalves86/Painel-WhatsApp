@@ -72,9 +72,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .conv-time{font-size:11px;color:var(--text3);flex-shrink:0}
 .conv-preview{font-size:12px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
 .badge-st{font-size:10px;padding:2px 6px;border-radius:4px;font-weight:500}
-.badge-em{background:var(--blue-light);color:var(--blue-dark)}
-.badge-pen{background:var(--amber-light);color:var(--amber)}
-.badge-fin{background:var(--green-light);color:var(--green)}
+.badge-st.badge-em{background:var(--blue-light);color:var(--blue-dark)}
+.badge-st.badge-pen{background:var(--amber-light);color:var(--amber)}
+.badge-st.badge-fin{background:var(--green-light);color:var(--green)}
 .conv-loading{padding:32px 16px;text-align:center;color:var(--text3);font-size:13px}
 .spin{display:inline-block;width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite;margin-bottom:8px}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -265,7 +265,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="rp-label" style="margin-top:10px">Número</div>
     <div class="rp-val" id="rpNum">–</div>
     <div class="rp-label" style="margin-top:10px">Instância</div>
-    <div class="rp-val" id="rpInstance">evolution-api-pktx</div>
+    <div class="rp-val" id="rpInstance">Novo teste</div>
   </div>
   <div class="rp-section">
     <div class="rp-label">Identificadores</div>
@@ -289,7 +289,7 @@ let API_KEY      = "BA6AD448919F-4C50-9C6D-67F36EFDDA95";
 let INSTANCE     = "Novo teste";
 
 let convs        = [];      
-let activeId    = null;    
+let activeId     = null;    
 let filterText  = '';
 let activeTab   = 'all';
 let currentView = 'chat'; 
@@ -314,13 +314,13 @@ function initials(n) {
 
 function toast(msg, type='') {
   const el = document.getElementById('toast');
+  if (!el) return;
   el.textContent = msg;
   el.className = 'toast show ' + type;
   setTimeout(() => el.classList.remove('show'), 3000);
 }
 
 async function apiFetch(path, body = null) {
-
   const opts = {
     method: body !== null ? 'POST' : 'GET',
     headers: {
@@ -334,15 +334,12 @@ async function apiFetch(path, body = null) {
   }
 
   const url = BASE_URL + path;
-
-  console.log('URL:', url);
+  console.log('Requisitando URL:', url);
 
   const response = await fetch(url, opts);
-
   const text = await response.text();
 
-  console.log('STATUS:', response.status);
-  console.log('BODY:', text);
+  console.log('Resposta STATUS:', response.status);
 
   if (!response.ok) {
     throw new Error(`HTTP ${response.status}: ${text}`);
@@ -357,36 +354,43 @@ async function apiFetch(path, body = null) {
 
 async function loadContacts() {
   try {
-    const data = await apiFetch(`/chat/findChats/${INSTANCE}`, {
-      where: {}
-    });
+    // Evita erro de rota tratando o espaço do nome da instância ("Novo teste" vira "Novo%20teste")
+    const encodedInstance = encodeURIComponent(INSTANCE);
+    
+    // 1. Tenta buscar conversas ativas
+    let data = await apiFetch(`/chat/findChats/${encodedInstance}`, { where: {} });
+    console.log("CHATS RETORNADOS:", data);
 
-    console.log("CHATS:", data);
+    let list = Array.isArray(data) ? data : (data.records || data.chats || data.contacts || []);
 
-    const list = Array.isArray(data)
-      ? data
-      : (data.records || data.contacts || data.chats || []);
+    // 2. Segurança para Instância Nova: Se não houver conversas no chat, busca direto da agenda sincronizada
+    if (list.length === 0) {
+      console.log("Nenhuma conversa ativa encontrada no chat. Buscando contatos sincronizados da agenda...");
+      try {
+        const contactsData = await apiFetch(`/contact/findContacts/${encodedInstance}`, { where: {} });
+        list = Array.isArray(contactsData) ? contactsData : (contactsData.records || contactsData.contacts || []);
+      } catch (errContacts) {
+        console.error("Erro ao buscar da agenda:", errContacts);
+      }
+    }
 
     convs = list;
-
     renderConvList();
     renderKanban();
 
   } catch(e) {
     console.error('Erro ao carregar contatos:', e);
-    document.getElementById('convList').innerHTML = `<div class="conv-loading" style="color:var(--red)">Erro ao conectar na Hostinger.</div>`;
+    document.getElementById('convList').innerHTML = `<div class="conv-loading" style="color:var(--red)">Erro ao ler dados da Evolution API. Verifique o console.</div>`;
   }
 }
 
 function getFiltered() {
   return convs.filter(c => {
-    const jid =
-  c.remoteJidAlt ||
-  c.remoteJid ||
-  c.jid ||
-  '';
+    if (!c) return false;
+    const jid = c.id || c.remoteJid || c.remoteJidAlt || c.jid || '';
+    if (!jid) return false;
     const pureNum = jid.split('@')[0];
-    const name = (c.name || c.pushName || pureNum).toLowerCase();
+    const name = (c.name || c.pushName || c.pushname || pureNum).toLowerCase();
     const txtOk = !filterText || name.includes(filterText.toLowerCase()) || pureNum.includes(filterText);
     const tabOk = activeTab === 'all' || (statuses[jid] || 'pendente') === activeTab;
     return txtOk && tabOk;
@@ -405,13 +409,12 @@ function renderConvList() {
 
   let h = '';
   list.forEach(c => {
-    const jid =
-  c.remoteJidAlt ||
-  c.remoteJid ||
-  c.jid;
+    const jid = c.id || c.remoteJid || c.remoteJidAlt || c.jid;
+    if (!jid) return;
+    
     const ac = avc(jid);
     const pureNum = jid.split('@')[0];
-    const displayName = c.name || c.pushName || ('+' + pureNum);
+    const displayName = c.name || c.pushName || c.pushname || ('+' + pureNum);
     const currentStatus = statuses[jid] || 'pendente';
     const safeNameAttr = displayName.replace(/'/g, "&#39;").replace(/"/g, "&quot;");
 
@@ -427,7 +430,7 @@ function renderConvList() {
           <span class="conv-name">${displayName}</span>
         </div>
         <div class="conv-preview">+${pureNum}</div>
-        <div class="conv-badges">
+        <div class="conv-badges" style="margin-top: 4px;">
           <span class="badge-st ${badgeClass}">${badgeLabel}</span>
         </div>
       </div>
@@ -437,7 +440,7 @@ function renderConvList() {
 }
 
 async function selectConv(jid, name) {
-    console.log('SELECTED JID:', jid);
+  console.log('SELECTED JID:', jid);
   activeId = jid;
   const pureNum = jid.split('@')[0];
   const ac = avc(jid);
@@ -465,19 +468,16 @@ async function selectConv(jid, name) {
 
 async function loadMessages(jid) {
   try {
-    const data = await apiFetch(
-  `/chat/findMessages/${INSTANCE}`,
-  {
-    where: {
-      remoteJid: jid
-    },
-    limit: 30
-  }
-);
+    const encodedInstance = encodeURIComponent(INSTANCE);
+    const data = await apiFetch(`/chat/findMessages/${encodedInstance}`, {
+      where: { remoteJid: jid },
+      limit: 30
+    });
     const msgs = Array.isArray(data) ? data : (data.records || data.messages || []);
     renderMsgs(msgs);
   } catch(e) {
-    document.getElementById('msgArea').innerHTML = `<div class="msg-empty"><p>Nenhuma mensagem sincronizada.</p></div>`;
+    console.error("Erro na busca de mensagens:", e);
+    document.getElementById('msgArea').innerHTML = `<div class="msg-empty"><p>Nenhuma mensagem sincronizada recente.</p></div>`;
   }
 }
 
@@ -497,10 +497,10 @@ function renderMsgs(messages) {
     const dir = fromMe ? 'out' : 'in';
     
     let text = "";
-    if (m.message) {
-      text = m.message.conversation || m.message.extendedTextMessage?.text || m.message.imageMessage?.caption || m.content || m.body;
-    } else {
+    if (m.content || m.body || m.text) {
       text = m.content || m.body || m.text;
+    } else if (m.message) {
+      text = m.message.conversation || m.message.extendedTextMessage?.text || m.message.imageMessage?.caption;
     }
     if (!text) text = fromMe ? "[Mensagem Enviada]" : "[Mídia]";
 
@@ -518,15 +518,22 @@ async function sendMsg() {
   if (!text || !activeId) return;
 
   try {
-    await apiFetch(`/message/sendText/${INSTANCE}`, {
-      number: activeId.split('@')[0],
-      options: { delay: 100 },
-      textMessage: { text }
+    const encodedInstance = encodeURIComponent(INSTANCE);
+    const targetNumber = activeId.split('@')[0]; // Garante envio limpo para o número
+    
+    await apiFetch(`/message/sendText/${encodedInstance}`, {
+      number: targetNumber,
+      options: { delay: 1200, presence: "composing" },
+      textMessage: { text: text }
     });
+    
     inp.value = '';
     toast('Mensagem enviada!', 'success');
-    await loadMessages(activeId);
+    
+    // Pequeno delay para dar tempo da API processar a entrega antes de ler o banco
+    setTimeout(() => { if(activeId === activeId) loadMessages(activeId); }, 800);
   } catch(e) {
+    console.error("Falha ao disparar mensagem:", e);
     toast('Erro ao enviar.', 'error');
   }
 }
@@ -543,6 +550,7 @@ function setStatus(s) {
 
 function updateStatusBadge(s) {
   const badge = document.getElementById('mainStatusBadge');
+  if (!badge) return;
   badge.className = 'badge-st';
   if(s === 'pendente') { badge.classList.add('badge-pen'); badge.textContent = 'Pendente'; }
   if(s === 'em_atendimento') { badge.classList.add('badge-em'); badge.textContent = 'Ativo'; }
@@ -553,18 +561,24 @@ function renderKanban() {
   const cols = { pendente: [], em_atendimento: [], finalizado: [] };
   
   convs.forEach(c => {
-    const jid = c.id || c.remoteJid || c.jid;
+    if (!c) return;
+    const jid = c.id || c.remoteJid || c.remoteJidAlt || c.jid;
+    if (!jid) return;
     const st = statuses[jid] || 'pendente';
     if(cols[st]) cols[st].push(c);
   });
 
   ['pendente', 'em_atendimento', 'finalizado'].forEach(st => {
-    document.getElementById(`kcnt-${st}`).textContent = cols[st].length;
+    const countEl = document.getElementById(`kcnt-${st}`);
+    const cardsEl = document.getElementById(`kcards-${st}`);
+    if (!countEl || !cardsEl) return;
+
+    countEl.textContent = cols[st].length;
     let h = '';
     cols[st].forEach(c => {
-      const jid = c.id || c.remoteJid || c.jid;
+      const jid = c.id || c.remoteJid || c.remoteJidAlt || c.jid;
       const pureNum = jid.split('@')[0];
-      const name = c.name || c.pushName || ('+' + pureNum);
+      const name = c.name || c.pushName || c.pushname || ('+' + pureNum);
       const safeNameAttr = name.replace(/'/g, "&#39;").replace(/"/g, "&quot;");
       
       h += `<div class="kcard" onclick="openChatFromKanban('${jid}', '${safeNameAttr}')">
@@ -572,7 +586,7 @@ function renderKanban() {
         <div class="kcard-msg">+${pureNum}</div>
       </div>`;
     });
-    document.getElementById(`kcards-${st}`).innerHTML = h || '<div style="font-size:11px;color:var(--text3);text-align:center;padding:10px;">Vazio</div>';
+    cardsEl.innerHTML = h || '<div style="font-size:11px;color:var(--text3);text-align:center;padding:10px;">Vazio</div>';
   });
 }
 
@@ -621,13 +635,15 @@ function handleKey(e) {
 
 // Inicializadores automáticos
 loadContacts();
+
+// Pooling controlado de sincronização
 setInterval(() => {
   if (activeId && currentView === 'chat') {
     loadMessages(activeId);
   } else {
     loadContacts();
   }
-}, 5000);
+}, 7000);
 </script>
 </body>
 </html>
