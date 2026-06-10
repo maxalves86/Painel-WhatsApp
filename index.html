@@ -6,578 +6,270 @@
 <title>Atendimento WhatsApp - Evolution API</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css"/>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --bg:#f8f9fb;
-  --surface:#ffffff;
-  --surface2:#f1f3f6;
-  --border:#e2e6ea;
-  --text:#1a1d23;
-  --text2:#6b7280;
-  --text3:#9ca3af;
-  --blue:#185FA5;
-  --blue-light:#E6F1FB;
-  --blue-dark:#0C447C;
-  --green:#3B6D11;
-  --green-light:#EAF3DE;
-  --amber:#854F0B;
-  --amber-light:#FAEEDA;
-  --red:#A32D2D;
-  --red-light:#FCEBEB;
-  --radius:10px;
-  --radius-sm:6px;
-}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);font-size:14px;height:100vh;overflow:hidden}
-
-.app{display:grid;grid-template-columns:64px 280px 1fr 260px;height:100vh;background:var(--bg);gap:0}
-
-.nav{background:#0f172a;display:flex;flex-direction:column;align-items:center;padding:12px 0;gap:6px}
-.nav-logo{width:36px;height:36px;background:var(--blue);border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:8px}
-.nav-logo i{color:#fff;font-size:20px}
-.nav-btn{width:40px;height:40px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;cursor:pointer;color:#64748b;transition:all .15s;border:none;background:none;position:relative}
-.nav-btn:hover{background:rgba(255,255,255,.08);color:#cbd5e1}
-.nav-btn.active{background:rgba(24,95,165,.3);color:#60a5fa}
-.nav-btn .tooltip{position:absolute;left:52px;background:#1e293b;color:#e2e8f0;font-size:11px;padding:4px 8px;border-radius:4px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .15s;z-index:100}
-.nav-btn:hover .tooltip{opacity:1}
-.nav-spacer{flex:1}
-.agent-nav{margin:0 8px 4px;cursor:pointer}
-.agent-circle{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#fff;background:var(--blue)}
-.status-ring{width:36px;height:36px;border-radius:50%;padding:2px;background:linear-gradient(135deg,#22c55e,#16a34a)}
-
-.sidebar{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
-.sidebar-header{padding:14px 14px 10px;border-bottom:1px solid var(--border)}
-.sidebar-title{font-size:15px;font-weight:600;color:var(--text);margin-bottom:10px;display:flex;align-items:center;justify-content:space-between}
-.sidebar-title button{background:none;border:none;cursor:pointer;padding:4px 8px;border-radius:6px}
-.sidebar-title button:hover{background:var(--surface2)}
-.search-bar{padding:8px 12px;border-bottom:1px solid var(--border)}
-.search-bar input{width:100%;padding:7px 10px 7px 32px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;background:var(--surface2);color:var(--text)}
-.search-bar input:focus{outline:none;border-color:var(--blue);background:var(--surface)}
-.search-wrap{position:relative}
-.search-wrap i{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:16px;pointer-events:none}
-.sidebar-tabs{display:flex;border-bottom:1px solid var(--border)}
-.stab{flex:1;padding:9px 4px;font-size:12px;text-align:center;cursor:pointer;color:var(--text2);border:none;background:none;border-bottom:2px solid transparent;transition:all .15s}
-.stab.active{color:var(--blue);border-bottom-color:var(--blue);font-weight:500}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',sans-serif;background:#f0f2f5;height:100vh;overflow:hidden}
+.app{display:flex;height:100vh}
+.sidebar{width:320px;background:#fff;border-right:1px solid #e0e0e0;display:flex;flex-direction:column}
+.sidebar-header{padding:16px;border-bottom:1px solid #e0e0e0}
+.sidebar-header h2{font-size:18px;display:flex;justify-content:space-between;align-items:center}
+.search{padding:12px;border-bottom:1px solid #e0e0e0}
+.search input{width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px}
+.tabs{display:flex;border-bottom:1px solid #e0e0e0}
+.tab{flex:1;padding:10px;text-align:center;cursor:pointer;background:none;border:none;font-size:12px}
+.tab.active{color:#075e54;border-bottom:2px solid #075e54}
 .conv-list{flex:1;overflow-y:auto}
-.conv-list::-webkit-scrollbar{width:4px}
-.conv-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
-.conv-item{display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .12s;border-left:3px solid transparent}
-.conv-item:hover{background:var(--surface2)}
-.conv-item.active{background:var(--blue-light);border-left-color:var(--blue)}
-.conv-avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0}
-.conv-body{flex:1;min-width:0}
-.conv-top{display:flex;justify-content:space-between;align-items:center;gap:4px}
-.conv-name{font-size:13px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px}
-.conv-time{font-size:11px;color:var(--text3);flex-shrink:0}
-.conv-preview{font-size:11px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;font-family:monospace}
-.badge-st{font-size:10px;padding:2px 6px;border-radius:4px;font-weight:500}
-.badge-st.badge-em{background:var(--blue-light);color:var(--blue-dark)}
-.badge-st.badge-pen{background:var(--amber-light);color:var(--amber)}
-.badge-st.badge-fin{background:var(--green-light);color:var(--green)}
-.badge-st.badge-bot{background:#f3e8ff;color:#6b21a5}
-.conv-loading{padding:32px 16px;text-align:center;color:var(--text3);font-size:13px}
-.spin{display:inline-block;width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite;margin-bottom:8px}
+.conv-item{display:flex;align-items:center;padding:12px;cursor:pointer;border-bottom:1px solid #f0f0f0}
+.conv-item:hover{background:#f5f5f5}
+.conv-item.active{background:#e8f5e9}
+.avatar{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold;margin-right:12px}
+.conv-info{flex:1}
+.conv-name{font-weight:500;font-size:14px}
+.conv-number{font-size:12px;color:#666;margin-top:2px}
+.conv-badges{display:flex;gap:4px;margin-top:4px}
+.badge{font-size:10px;padding:2px 6px;border-radius:4px}
+.badge-pendente{background:#fff3cd;color:#856404}
+.badge-ativo{background:#d4edda;color:#155724}
+.badge-finalizado{background:#f8d7da;color:#721c24}
+.badge-bot{background:#e2e3ff;color:#4a2c99}
+.main{flex:1;display:flex;flex-direction:column;background:#f0f2f5}
+.chat-header{background:#fff;padding:12px 16px;border-bottom:1px solid #e0e0e0;display:flex;align-items:center;gap:12px}
+.chat-info{flex:1}
+.chat-name{font-weight:600;font-size:16px}
+.chat-number{font-size:12px;color:#666}
+.status-buttons{display:flex;gap:8px}
+.status-btn{padding:6px 12px;border:1px solid #ddd;border-radius:20px;cursor:pointer;font-size:12px;background:#fff}
+.status-btn:hover{background:#f0f0f0}
+.messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:8px}
+.message{max-width:70%;padding:8px 12px;border-radius:12px;font-size:13px}
+.message.out{background:#dcf8c6;align-self:flex-end}
+.message.in{background:#fff;align-self:flex-start;border:1px solid #e0e0e0}
+.input-area{padding:12px;background:#fff;border-top:1px solid #e0e0e0;display:flex;gap:8px}
+.input-area textarea{flex:1;padding:10px;border:1px solid #ddd;border-radius:20px;resize:none;font-family:inherit;font-size:14px}
+.input-area button{background:#075e54;color:#fff;border:none;border-radius:20px;padding:0 20px;cursor:pointer}
+.right-panel{width:280px;background:#fff;border-left:1px solid #e0e0e0;padding:16px}
+.right-panel h4{font-size:14px;margin-bottom:12px;color:#666}
+.detail-row{margin-bottom:12px}
+.detail-label{font-size:11px;color:#999;margin-bottom:2px}
+.detail-value{font-size:13px;word-break:break-all}
+.empty-state{display:flex;flex:1;align-items:center;justify-content:center;color:#999;flex-direction:column;gap:12px}
+.loading{padding:20px;text-align:center;color:#999}
+.spin{display:inline-block;width:20px;height:20px;border:2px solid #ddd;border-top-color:#075e54;border-radius:50%;animation:spin 0.8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-
-.main{display:flex;flex-direction:column;background:var(--bg);overflow:hidden}
-.chat-header{padding:12px 16px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
-.chat-hinfo{flex:1;min-width:0}
-.chat-hname{font-size:14px;font-weight:600;color:var(--text)}
-.chat-hsub{font-size:11px;color:var(--text2);display:flex;align-items:center;gap:4px;margin-top:1px;font-family:monospace}
-.header-actions{display:flex;gap:6px}
-.hbtn{display:flex;align-items:center;gap:5px;padding:6px 12px;font-size:12px;border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;color:var(--text2);background:var(--surface);transition:all .15s;font-weight:500}
-.hbtn:hover{background:var(--surface2);border-color:var(--text3)}
-.hbtn.success{background:var(--green-light);color:var(--green);border-color:var(--green)}
-
-.messages-area{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:8px;background:var(--bg)}
-.messages-area::-webkit-scrollbar{width:4px}
-.messages-area::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
-.msg-row{display:flex;width:100%}
-.msg-row.out{justify-content:flex-end}
-.msg-row.in{justify-content:flex-start}
-.msg{max-width:72%;padding:8px 12px;border-radius:14px;font-size:13px;line-height:1.55;word-break:break-word}
-.msg-in{background:var(--surface);color:var(--text);border-bottom-left-radius:4px;border:1px solid var(--border)}
-.msg-out{background:var(--blue);color:#fff;border-bottom-right-radius:4px}
-.msg-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--text3)}
-.msg-empty i{font-size:40px;opacity:.3}
-.msg-empty p{font-size:13px}
-.input-area{padding:12px 16px;background:var(--surface);border-top:1px solid var(--border)}
-.input-row{display:flex;gap:8px;align-items:flex-end}
-.input-tools{display:flex;gap:6px;margin-bottom:6px}
-.itool{background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer;padding:2px;border-radius:4px;display:flex;align-items:center}
-.itool:hover{color:var(--text2);background:var(--surface2)}
-.msg-input{flex:1;border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px;font-size:13px;resize:none;height:72px;font-family:inherit;background:var(--surface);color:var(--text);line-height:1.5}
-.msg-input:focus{outline:none;border-color:var(--blue)}
-.send-btn{background:var(--blue);color:#fff;border:none;border-radius:var(--radius);padding:0 18px;cursor:pointer;font-size:13px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;height:72px;font-weight:500;min-width:72px}
-.send-btn:hover{background:var(--blue-dark)}
-.send-btn:disabled{background:var(--text3);cursor:not-allowed}
-
-.kanban-view{flex:1;overflow-x:auto;padding:14px;display:flex;gap:12px;background:var(--bg)}
-.kanban-col{min-width:195px;flex:1;max-width:260px;background:var(--surface2);border-radius:var(--radius);padding:10px;display:flex;flex-direction:column;gap:0;border:1px solid var(--border)}
-.kanban-col-title{font-size:12px;font-weight:600;color:var(--text2);margin-bottom:8px;display:flex;justify-content:space-between;padding:0 2px;text-transform:uppercase;letter-spacing:.4px}
-.k-cnt{background:var(--border);color:var(--text2);font-size:11px;font-weight:600;min-width:20px;height:20px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;padding:0 5px}
-.kcards{display:flex;flex-direction:column;gap:7px;min-height:60px}
-.kcard{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;cursor:pointer}
-.kcard:hover{border-color:var(--blue);box-shadow:0 2px 8px rgba(24,95,165,.1)}
-.kcard-name{font-size:13px;font-weight:500;color:var(--text);margin-bottom:3px}
-.kcard-msg{font-size:11px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:monospace}
-
-.right-panel{background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
-.rp-header{padding:14px;border-bottom:1px solid var(--border);font-size:13px;font-weight:600;display:flex;align-items:center;gap:7px}
-.rp-section{padding:12px 14px;border-bottom:1px solid var(--border)}
-.rp-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;font-weight:600}
-.rp-val{font-size:13px;color:var(--text);line-height:1.5;word-break:break-all}
-.tag-wrap{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
-.tag{font-size:11px;padding:3px 9px;border-radius:20px;font-weight:500}
-.tag-novo{background:var(--blue-light);color:var(--blue-dark)}
-.tag-bot{background:#f3e8ff;color:#6b21a5}
-.rp-scroll{flex:1;overflow-y:auto;padding:12px 14px}
-
-.toast{position:fixed;bottom:20px;right:20px;background:#1e293b;color:#f1f5f9;padding:10px 16px;border-radius:var(--radius-sm);font-size:13px;z-index:300;opacity:0;transition:opacity .25s;pointer-events:none;display:flex;align-items:center;gap:8px}
+.toast{position:fixed;bottom:20px;right:20px;background:#333;color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;z-index:1000;opacity:0;transition:opacity 0.3s}
 .toast.show{opacity:1}
-.toast.success{background:#166534}
-.toast.error{background:#991b1b}
-.no-conv{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:10px;color:var(--text3)}
-.no-conv i{font-size:48px;opacity:.25}
 </style>
 </head>
 <body>
 
 <div class="app">
-
-<nav class="nav">
-  <div class="nav-logo"><i class="ti ti-brand-whatsapp"></i></div>
-  <button class="nav-btn active" onclick="setNavView('chat')" id="navChat">
-    <i class="ti ti-message-circle"></i>
-    <span class="tooltip">Conversas</span>
-  </button>
-  <button class="nav-btn" onclick="setNavView('kanban')" id="navKanban">
-    <i class="ti ti-layout-columns"></i>
-    <span class="tooltip">Kanban</span>
-  </button>
-  <div class="nav-spacer"></div>
-  <div class="agent-nav">
-    <div class="status-ring">
-      <div class="agent-circle" id="agentAvatar">MA</div>
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <h2>💬 Atendimento <button onclick="loadAll()" style="background:none;border:none;cursor:pointer">🔄</button></h2>
+    </div>
+    <div class="search">
+      <input type="text" id="searchInput" placeholder="Buscar contato..." oninput="filterChats()">
+    </div>
+    <div class="tabs">
+      <button class="tab active" onclick="setTab('all',this)">Todas</button>
+      <button class="tab" onclick="setTab('pendente',this)">Pendentes</button>
+      <button class="tab" onclick="setTab('em_atendimento',this)">Ativas</button>
+      <button class="tab" onclick="setTab('finalizado',this)">Finalizadas</button>
+    </div>
+    <div class="conv-list" id="convList">
+      <div class="loading"><div class="spin"></div><br>Carregando...</div>
     </div>
   </div>
-</nav>
 
-<aside class="sidebar" id="sidebarArea">
-  <div class="sidebar-header">
-    <div class="sidebar-title">
-      <span>Atendimento</span>
-      <button onclick="loadAllData()">
-        <i class="ti ti-refresh" style="font-size:13px"></i>
-      </button>
-    </div>
-  </div>
-  <div class="search-bar">
-    <div class="search-wrap">
-      <i class="ti ti-search"></i>
-      <input type="text" placeholder="Buscar contato ou número..." oninput="filterConvs(this.value)"/>
-    </div>
-  </div>
-  <div class="sidebar-tabs">
-    <button class="stab active" onclick="setTab('all',this)">Todas</button>
-    <button class="stab" onclick="setTab('pendente',this)">Pendentes</button>
-    <button class="stab" onclick="setTab('em_atendimento',this)">Ativas</button>
-    <button class="stab" onclick="setTab('finalizado',this)">Finalizadas</button>
-  </div>
-  <div class="conv-list" id="convList">
-    <div class="conv-loading"><div class="spin"></div><br>Carregando contatos...</div>
-  </div>
-</aside>
-
-<main class="main" id="mainArea">
-  <div class="chat-header" id="chatHeader" style="display:none">
-    <div class="conv-avatar" id="mainAvatar" style="width:40px;height:40px;font-size:14px;font-weight:600">--</div>
-    <div class="chat-hinfo">
-      <div class="chat-hname" id="mainName">Selecione uma conversa</div>
-      <div class="chat-hsub">
-        <i class="ti ti-device-mobile" style="font-size:12px"></i>
-        <span id="mainSub">–</span>
-        <span id="mainStatusBadge" class="badge-st badge-pen" style="margin-left:4px">Pendente</span>
+  <!-- Main -->
+  <div class="main">
+    <div class="chat-header" id="chatHeader" style="display:none">
+      <div class="avatar" id="headerAvatar" style="background:#ccc">--</div>
+      <div class="chat-info">
+        <div class="chat-name" id="chatName">-</div>
+        <div class="chat-number" id="chatNumber">-</div>
+      </div>
+      <div class="status-buttons">
+        <button class="status-btn" onclick="updateStatus('pendente')">⏳ Pendente</button>
+        <button class="status-btn" onclick="updateStatus('em_atendimento')">▶ Atender</button>
+        <button class="status-btn" onclick="updateStatus('finalizado')">✓ Finalizar</button>
       </div>
     </div>
-    <div class="header-actions">
-      <button class="hbtn" onclick="setConversationStatus('pendente')"><i class="ti ti-clock"></i> Pendente</button>
-      <button class="hbtn" onclick="setConversationStatus('em_atendimento')"><i class="ti ti-player-play"></i> Atender</button>
-      <button class="hbtn success" onclick="setConversationStatus('finalizado')"><i class="ti ti-check"></i> Finalizar</button>
+    <div class="messages" id="messagesArea">
+      <div class="empty-state">
+        <div>💬</div>
+        <div>Selecione uma conversa</div>
+      </div>
+    </div>
+    <div class="input-area" id="inputArea" style="display:none">
+      <textarea id="messageInput" placeholder="Digite sua mensagem..." rows="2" onkeydown="if(event.key=='Enter'&&!event.shiftKey){event.preventDefault();sendMessage()}"></textarea>
+      <button onclick="sendMessage()">Enviar 📤</button>
     </div>
   </div>
 
-  <div class="no-conv" id="noConvPlaceholder">
-    <i class="ti ti-brand-whatsapp" style="font-size:48px; opacity:0.3;"></i>
-    <p>Selecione uma conversa para começar</p>
-  </div>
-
-  <div id="chatViewWrap" style="display:none;flex-direction:column;flex:1;overflow:hidden">
-    <div class="messages-area" id="msgArea"></div>
-    <div class="input-area">
-      <div class="input-tools">
-        <button class="itool"><i class="ti ti-mood-smile"></i></button>
-        <button class="itool"><i class="ti ti-paperclip"></i></button>
-      </div>
-      <div class="input-row">
-        <textarea class="msg-input" id="msgInput" placeholder="Digite sua mensagem... (Enter para enviar)" onkeydown="handleKey(event)"></textarea>
-        <button class="send-btn" onclick="sendMessage()" id="sendBtn">
-          <i class="ti ti-send" style="font-size:20px"></i>
-          <span style="font-size:11px">Enviar</span>
-        </button>
-      </div>
+  <!-- Right Panel -->
+  <div class="right-panel">
+    <h4>📋 Detalhes</h4>
+    <div class="detail-row">
+      <div class="detail-label">Nome</div>
+      <div class="detail-value" id="detailName">-</div>
+    </div>
+    <div class="detail-row">
+      <div class="detail-label">Remote JID</div>
+      <div class="detail-value" id="detailJid" style="font-size:11px">-</div>
+    </div>
+    <div class="detail-row">
+      <div class="detail-label">Número</div>
+      <div class="detail-value" id="detailNumber">-</div>
+    </div>
+    <div class="detail-row">
+      <div class="detail-label">Tipo</div>
+      <div class="detail-value" id="detailType">-</div>
+    </div>
+    <div class="detail-row">
+      <div class="detail-label">Instância</div>
+      <div class="detail-value">Novo teste</div>
     </div>
   </div>
-
-  <div id="kanbanViewWrap" style="display:none;flex:1;overflow:auto">
-    <div class="kanban-view">
-      <div class="kanban-col">
-        <div class="kanban-col-title"><span>🕐 Pendente</span><span class="k-cnt" id="kcnt-pendente">0</span></div>
-        <div class="kcards" id="kcards-pendente"></div>
-      </div>
-      <div class="kanban-col">
-        <div class="kanban-col-title"><span>💬 Em atendimento</span><span class="k-cnt" id="kcnt-em_atendimento">0</span></div>
-        <div class="kcards" id="kcards-em_atendimento"></div>
-      </div>
-      <div class="kanban-col">
-        <div class="kanban-col-title"><span>✅ Finalizado</span><span class="k-cnt" id="kcnt-finalizado">0</span></div>
-        <div class="kcards" id="kcards-finalizado"></div>
-      </div>
-    </div>
-  </div>
-</main>
-
-<aside class="right-panel" id="rightPanel">
-  <div class="rp-header"><i class="ti ti-info-circle"></i> Detalhes do contato</div>
-  <div class="rp-section">
-    <div class="rp-label">Nome</div>
-    <div class="rp-val" id="rpName">–</div>
-    <div class="rp-label" style="margin-top:10px">Remote JID</div>
-    <div class="rp-val" id="rpJid" style="font-size:11px;font-family:monospace">–</div>
-    <div class="rp-label" style="margin-top:10px">Número Real</div>
-    <div class="rp-val" id="rpNum" style="font-family:monospace">–</div>
-    <div class="rp-label" style="margin-top:10px">Tipo</div>
-    <div class="rp-val" id="rpType">–</div>
-    <div class="rp-label" style="margin-top:10px">Instância</div>
-    <div class="rp-val" id="rpInstance">Novo teste</div>
-  </div>
-  <div class="rp-section">
-    <div class="rp-label">Identificadores</div>
-    <div class="tag-wrap" id="tagsWrap">
-      <span class="tag tag-novo">WhatsApp Oficial</span>
-    </div>
-  </div>
-  <div class="rp-scroll">
-    <div class="rp-label">Notas internas corporativas</div>
-    <div style="font-size:12px; color:var(--text2); font-style:italic;">Painel de Monitoramento Ativo</div>
-  </div>
-</aside>
-
 </div>
 
-<div class="toast" id="toast"></div>
+<div id="toast" class="toast"></div>
 
 <script>
-// ==================== CONFIGURAÇÕES ====================
+// CONFIGURAÇÃO
 const BASE_URL = "https://evolution-api-pktx.srv1726422.hstgr.cloud";
 const API_KEY = "BA6AD448919F-4C50-9C6D-67F36EFDDA95";
 const INSTANCE = "Novo teste";
 
-// Estado da aplicação
+// ESTADO
 let chats = [];
-let contactsMap = new Map(); // Mapa de remoteJid para informações do contato
-let currentChatId = null;
-let currentChatName = '';
-let filterText = '';
-let activeTab = 'all';
-let currentView = 'chat';
-let conversationStatus = JSON.parse(localStorage.getItem('conversation_status') || '{}');
+let currentChat = null;
+let currentFilter = '';
+let currentTab = 'all';
+let statusMap = JSON.parse(localStorage.getItem('chat_status') || '{}');
 
-// ==================== UTILITÁRIOS ====================
-function showToast(message, type = '') {
+// UTILITÁRIOS
+function showToast(msg, type = '') {
   const toast = document.getElementById('toast');
-  toast.textContent = message;
-  toast.className = 'toast show ' + type;
+  toast.textContent = msg;
+  toast.className = 'toast show';
   setTimeout(() => toast.classList.remove('show'), 3000);
 }
 
-async function evolutionAPI(endpoint, method = 'GET', body = null) {
+async function apiRequest(endpoint, method = 'POST', body = null) {
   const url = `${BASE_URL}${endpoint}`;
-  const headers = {
-    'apikey': API_KEY,
-    'Content-Type': 'application/json'
-  };
-  
+  const headers = { 'apikey': API_KEY, 'Content-Type': 'application/json' };
   const options = { method, headers };
-  if (body && method !== 'GET') options.body = JSON.stringify(body);
+  if (body) options.body = JSON.stringify(body);
   
   try {
-    console.log(`📡 ${method} ${url}`);
-    if (body) console.log(`   Body:`, body);
-    
-    const response = await fetch(url, options);
-    const data = await response.json();
-    
-    console.log(`✅ Resposta status ${response.status}`);
-    
-    if (!response.ok) {
-      throw new Error(data.message || data.error || `Erro ${response.status}`);
-    }
-    
+    const resp = await fetch(url, options);
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.message || data.error || `HTTP ${resp.status}`);
     return data;
-  } catch (error) {
-    console.error(`❌ Erro:`, error);
-    throw error;
+  } catch (err) {
+    console.error(`Erro ${endpoint}:`, err);
+    throw err;
   }
 }
 
-// Busca todos os contatos da agenda do WhatsApp
-async function fetchContacts() {
-  try {
-    const encodedInstance = encodeURIComponent(INSTANCE);
-    const response = await evolutionAPI(`/contact/findContacts/${encodedInstance}`, 'POST', { where: {} });
-    
-    let contacts = [];
-    if (Array.isArray(response)) {
-      contacts = response;
-    } else if (response && response.records) {
-      contacts = response.records;
-    } else if (response && response.contacts) {
-      contacts = response.contacts;
-    } else if (response && response.data) {
-      contacts = response.data;
-    }
-    
-    // Mapeia remoteJid para informações do contato
-    contacts.forEach(contact => {
-      const remoteJid = contact.remoteJid || contact.id || contact.jid;
-      if (remoteJid) {
-        contactsMap.set(remoteJid, {
-          name: contact.name || contact.pushName || contact.displayName,
-          number: contact.number || extractNumber(remoteJid),
-          isBusiness: contact.isBusiness || false,
-          isBot: contact.name === 'BOT' || (contact.pushName === 'BOT') // Detecta BOT pelo nome
-        });
-      }
-    });
-    
-    console.log(`📚 ${contactsMap.size} contatos carregados no mapa`);
-    return contactsMap;
-  } catch (error) {
-    console.warn('Erro ao buscar contatos:', error);
-    return contactsMap;
-  }
+function extractNumber(jid) {
+  if (!jid) return '';
+  return jid.split('@')[0];
 }
 
-function extractNumber(remoteJid) {
-  if (!remoteJid) return '';
-  // Remove @c.us, @s.whatsapp.net, etc
-  let number = remoteJid.split('@')[0];
-  // Se for um ID numérico longo, pode ser número de telefone
-  if (/^\d+$/.test(number) && number.length >= 10 && number.length <= 15) {
-    return number;
-  }
-  return remoteJid; // Retorna o ID original se não parecer número
+function formatNumber(num) {
+  if (!num) return '';
+  if (num.length === 11) return `+55 ${num.slice(0,2)} ${num.slice(2,7)} ${num.slice(7)}`;
+  if (num.length === 12) return `+${num.slice(0,2)} ${num.slice(2,7)} ${num.slice(7)}`;
+  if (num.length === 13) return `+${num.slice(0,2)} ${num.slice(2,4)} ${num.slice(4,9)} ${num.slice(9)}`;
+  return num;
 }
 
-function formatPhoneNumber(number) {
-  if (!number) return '';
-  if (number.includes('@') || number.includes('lid')) return number;
-  
-  let clean = number.replace(/[^0-9]/g, '');
-  if (clean.length === 13) {
-    return `+${clean.slice(0,2)} ${clean.slice(2,4)} ${clean.slice(4,9)} ${clean.slice(9)}`;
-  }
-  if (clean.length === 12) {
-    return `+${clean.slice(0,2)} ${clean.slice(2,7)} ${clean.slice(7)}`;
-  }
-  if (clean.length === 11) {
-    return `+55 ${clean.slice(0,2)} ${clean.slice(2,7)} ${clean.slice(7)}`;
-  }
-  return number;
-}
-
-function getChatType(remoteJid) {
-  if (!remoteJid) return 'unknown';
-  if (remoteJid.includes('@g.us')) return 'group';
-  if (remoteJid.includes('@lid')) return 'group';
-  if (remoteJid.includes('@c.us')) return 'individual';
-  if (remoteJid.includes('@s.whatsapp.net')) return 'individual';
-  return 'unknown';
-}
-
-const avatarColors = [
-  { bg: '#9FE1CB', color: '#085041' },
-  { bg: '#B5D4F4', color: '#0C447C' },
-  { bg: '#FAC775', color: '#633806' },
-  { bg: '#F4C0D1', color: '#72243E' },
-  { bg: '#D4E0FF', color: '#1E3A8A' }
-];
-
-function getAvatarColor(id) {
-  if (!id) return avatarColors[0];
+function getAvatarColor(str) {
   let hash = 0;
-  for (let i = 0; i < id.length; i++) {
-    hash = ((hash << 5) - hash) + id.charCodeAt(i);
-    hash |= 0;
-  }
-  return avatarColors[Math.abs(hash) % avatarColors.length];
+  for (let i = 0; i < str.length; i++) hash = ((hash << 5) - hash) + str.charCodeAt(i);
+  const colors = ['#9FE1CB', '#B5D4F4', '#FAC775', '#F4C0D1', '#D4E0FF'];
+  return colors[Math.abs(hash) % colors.length];
 }
 
-function getInitials(name) {
-  if (!name || name === 'undefined') return '??';
-  return name.substring(0, 2).toUpperCase();
-}
-
-function escapeHtml(text) {
-  if (!text) return '';
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
-}
-
-// ==================== CARREGAR CHATS ====================
+// CARREGAR CHATS
 async function loadChats() {
   try {
-    const encodedInstance = encodeURIComponent(INSTANCE);
-    const response = await evolutionAPI(`/chat/findChats/${encodedInstance}`, 'POST', { where: {} });
+    const encoded = encodeURIComponent(INSTANCE);
+    const data = await apiRequest(`/chat/findChats/${encoded}`, 'POST', { where: {} });
     
-    let chatList = [];
-    if (Array.isArray(response)) {
-      chatList = response;
-    } else if (response && response.records) {
-      chatList = response.records;
-    } else if (response && response.chats) {
-      chatList = response.chats;
-    } else if (response && response.data) {
-      chatList = response.data;
-    }
+    let rawChats = [];
+    if (Array.isArray(data)) rawChats = data;
+    else if (data?.records) rawChats = data.records;
+    else if (data?.chats) rawChats = data.chats;
     
-    // Processa cada chat, enriquecendo com dados do contato
-    chats = chatList.map(chat => {
-      const remoteJid = chat.remoteJid || chat.id || chat.jid;
-      const type = getChatType(remoteJid);
-      const contactInfo = contactsMap.get(remoteJid);
-      
-      // Determina o nome (prioriza: contato > chat > número)
-      let name = contactInfo?.name || chat.name || chat.pushName || chat.senderName;
-      let number = contactInfo?.number || extractNumber(remoteJid);
-      let isBot = contactInfo?.isBot || (name === 'BOT') || (chat.name === 'BOT');
-      
-      // Se não tem nome e não é bot, tenta usar o número
-      if (!name || name === 'undefined') {
-        name = number;
-      }
+    chats = rawChats.map(chat => {
+      const jid = chat.remoteJid || chat.id || chat.jid;
+      const number = extractNumber(jid);
+      const name = chat.name || chat.pushName || chat.senderName || number;
+      const isBot = name === 'BOT' || chat.pushName === 'BOT';
       
       return {
-        id: chat.id || remoteJid,
-        remoteJid: remoteJid,
-        type: type,
-        identifier: extractNumber(remoteJid),
+        jid: jid,
         number: number,
         name: name,
         isBot: isBot,
-        pushName: chat.pushName || chat.name,
-        lastMessage: chat.lastMessage?.text || chat.lastMessage || '',
+        lastMessage: chat.lastMessage?.text || '',
         timestamp: chat.timestamp || Date.now()
       };
     });
     
     // Remove duplicatas
-    const uniqueChats = new Map();
-    chats.forEach(chat => {
-      if (chat.remoteJid && !uniqueChats.has(chat.remoteJid)) {
-        uniqueChats.set(chat.remoteJid, chat);
-      }
-    });
-    chats = Array.from(uniqueChats.values());
+    const unique = new Map();
+    chats.forEach(c => { if (c.jid && !unique.has(c.jid)) unique.set(c.jid, c); });
+    chats = Array.from(unique.values());
     
-    console.log(`📞 ${chats.length} conversas processadas:`, chats);
-    
+    console.log('Chats carregados:', chats);
     renderChatList();
-    renderKanban();
     
-    if (chats.length === 0) {
-      showToast('Nenhuma conversa encontrada', '');
-    } else {
-      const botCount = chats.filter(c => c.isBot).length;
-      const realCount = chats.filter(c => !c.isBot && c.type === 'individual').length;
-      showToast(`${chats.length} conversas (${realCount} real, ${botCount} bot)`, 'success');
-    }
-  } catch (error) {
-    console.error('Erro ao carregar chats:', error);
-    document.getElementById('convList').innerHTML = `
-      <div class="conv-loading" style="color:var(--red)">
-        Erro: ${error.message}
-      </div>
-    `;
+    if (chats.length === 0) showToast('Nenhuma conversa encontrada');
+    else showToast(`${chats.length} conversas carregadas`);
+  } catch (err) {
+    console.error(err);
+    document.getElementById('convList').innerHTML = `<div class="loading">❌ Erro: ${err.message}</div>`;
   }
-}
-
-async function loadAllData() {
-  showToast('Carregando dados...', '');
-  await fetchContacts();
-  await loadChats();
-}
-
-// ==================== RENDERIZAÇÃO ====================
-function getFilteredChats() {
-  return chats.filter(chat => {
-    if (!chat || !chat.remoteJid) return false;
-    
-    const searchTerm = filterText.toLowerCase();
-    const matchesSearch = !filterText || 
-      chat.name.toLowerCase().includes(searchTerm) || 
-      chat.identifier.includes(searchTerm) ||
-      chat.number.includes(searchTerm);
-    
-    const status = conversationStatus[chat.remoteJid] || 'pendente';
-    const matchesTab = activeTab === 'all' || status === activeTab;
-    
-    return matchesSearch && matchesTab;
-  });
 }
 
 function renderChatList() {
   const container = document.getElementById('convList');
-  const filtered = getFilteredChats();
+  let filtered = chats.filter(chat => {
+    if (currentFilter && !chat.name.toLowerCase().includes(currentFilter.toLowerCase()) && !chat.number.includes(currentFilter)) return false;
+    const status = statusMap[chat.jid] || 'pendente';
+    if (currentTab !== 'all' && status !== currentTab) return false;
+    return true;
+  });
   
-  if (!filtered.length) {
-    container.innerHTML = '<div class="conv-loading">Nenhum contato encontrado.</div>';
+  if (filtered.length === 0) {
+    container.innerHTML = '<div class="loading">Nenhum contato encontrado</div>';
     return;
   }
   
   let html = '';
   filtered.forEach(chat => {
-    const jid = chat.remoteJid;
-    const displayName = chat.name;
-    const displayNumber = formatPhoneNumber(chat.number);
-    const status = conversationStatus[jid] || 'pendente';
-    const colors = getAvatarColor(jid);
+    const status = statusMap[chat.jid] || 'pendente';
+    let statusClass = 'badge-pendente';
+    let statusText = 'Pendente';
+    if (status === 'em_atendimento') { statusClass = 'badge-ativo'; statusText = 'Ativo'; }
+    if (status === 'finalizado') { statusClass = 'badge-finalizado'; statusText = 'Finalizado'; }
     
-    let statusClass = 'badge-pen';
-    let statusLabel = 'Pendente';
-    if (status === 'em_atendimento') {
-      statusClass = 'badge-em';
-      statusLabel = 'Ativo';
-    } else if (status === 'finalizado') {
-      statusClass = 'badge-fin';
-      statusLabel = 'Finalizado';
-    }
-    
-    const icon = chat.isBot ? '🤖 ' : (chat.type === 'group' ? '👥 ' : '💬 ');
+    const bgColor = getAvatarColor(chat.jid);
+    const isActive = currentChat?.jid === chat.jid;
     
     html += `
-      <div class="conv-item ${jid === currentChatId ? 'active' : ''}" onclick="selectChat('${jid.replace(/'/g, "\\'")}', '${escapeHtml(displayName).replace(/'/g, "\\'")}')">
-        <div class="conv-avatar" style="background:${colors.bg};color:${colors.color}">${getInitials(displayName)}</div>
-        <div class="conv-body">
-          <div class="conv-top">
-            <span class="conv-name">${icon}${escapeHtml(displayName)}</span>
-          </div>
-          <div class="conv-preview">${escapeHtml(displayNumber)}</div>
-          <div style="margin-top: 4px;">
-            <span class="badge-st ${statusClass}">${statusLabel}</span>
-            ${chat.isBot ? '<span class="badge-st badge-bot" style="margin-left:4px">🤖 Bot</span>' : ''}
-            ${chat.type === 'group' ? '<span class="badge-st badge-group" style="margin-left:4px">👥 Grupo</span>' : ''}
+      <div class="conv-item ${isActive ? 'active' : ''}" onclick="selectChat('${chat.jid.replace(/'/g, "\\'")}')">
+        <div class="avatar" style="background:${bgColor}">${chat.name.substring(0,2).toUpperCase()}</div>
+        <div class="conv-info">
+          <div class="conv-name">${chat.isBot ? '🤖 ' : ''}${escapeHtml(chat.name)}</div>
+          <div class="conv-number">${formatNumber(chat.number)}</div>
+          <div class="conv-badges">
+            <span class="badge ${statusClass}">${statusText}</span>
+            ${chat.isBot ? '<span class="badge badge-bot">🤖 Bot</span>' : ''}
           </div>
         </div>
       </div>
@@ -586,10 +278,158 @@ function renderChatList() {
   container.innerHTML = html;
 }
 
-// ==================== MENSAGENS ====================
-async function loadMessages(remoteJid) {
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// SELECIONAR CHAT
+async function selectChat(jid) {
+  const chat = chats.find(c => c.jid === jid);
+  if (!chat) return;
+  
+  currentChat = chat;
+  
+  // Atualizar UI
+  document.getElementById('chatHeader').style.display = 'flex';
+  document.getElementById('inputArea').style.display = 'flex';
+  document.getElementById('chatName').textContent = chat.isBot ? `🤖 ${chat.name}` : chat.name;
+  document.getElementById('chatNumber').textContent = formatNumber(chat.number);
+  document.getElementById('detailName').textContent = chat.name;
+  document.getElementById('detailJid').textContent = chat.jid;
+  document.getElementById('detailNumber').textContent = formatNumber(chat.number);
+  document.getElementById('detailType').textContent = chat.isBot ? '🤖 Bot' : '👤 Contato real';
+  
+  const bgColor = getAvatarColor(chat.jid);
+  document.getElementById('headerAvatar').style.background = bgColor;
+  document.getElementById('headerAvatar').textContent = chat.name.substring(0,2).toUpperCase();
+  
+  // Carregar mensagens
+  document.getElementById('messagesArea').innerHTML = '<div class="loading"><div class="spin"></div><br>Carregando...</div>';
+  await loadMessages(jid);
+  
+  renderChatList();
+}
+
+async function loadMessages(jid) {
   try {
-    const encodedInstance = encodeURIComponent(INSTANCE);
-    const response = await evolutionAPI(`/chat/findMessages/${encodedInstance}`, 'POST', {
-      where: { remoteJid: remoteJid },
+    const encoded = encodeURIComponent(INSTANCE);
+    const data = await apiRequest(`/chat/findMessages/${encoded}`, 'POST', {
+      where: { remoteJid: jid },
       limit: 50
+    });
+    
+    let messages = [];
+    if (data?.messages && Array.isArray(data.messages)) messages = data.messages;
+    else if (Array.isArray(data)) messages = data;
+    else if (data?.records) messages = data.records;
+    
+    renderMessages(messages);
+  } catch (err) {
+    console.error(err);
+    document.getElementById('messagesArea').innerHTML = '<div class="empty-state">❌ Erro ao carregar mensagens</div>';
+  }
+}
+
+function renderMessages(messages) {
+  const container = document.getElementById('messagesArea');
+  
+  if (!messages || messages.length === 0) {
+    container.innerHTML = '<div class="empty-state">💬 Nenhuma mensagem ainda<br>Envie algo para começar!</div>';
+    return;
+  }
+  
+  let html = '';
+  for (const msg of messages) {
+    const isFromMe = msg.key?.fromMe === true || msg.fromMe === true;
+    const direction = isFromMe ? 'out' : 'in';
+    
+    let text = msg.message?.conversation || msg.message?.extendedTextMessage?.text || msg.text || msg.body || msg.content;
+    if (!text && msg.message?.imageMessage) text = '📷 Imagem';
+    if (!text && msg.message?.audioMessage) text = '🎵 Áudio';
+    if (!text && msg.message?.documentMessage) text = '📎 Documento';
+    if (!text) text = isFromMe ? 'Mensagem enviada' : 'Mensagem recebida';
+    
+    html += `<div class="message ${direction}">${escapeHtml(text)}</div>`;
+  }
+  
+  container.innerHTML = html;
+  container.scrollTop = container.scrollHeight;
+}
+
+// ENVIAR MENSAGEM
+async function sendMessage() {
+  if (!currentChat) {
+    showToast('Selecione uma conversa primeiro', 'error');
+    return;
+  }
+  
+  const input = document.getElementById('messageInput');
+  const text = input.value.trim();
+  if (!text) return;
+  
+  try {
+    const encoded = encodeURIComponent(INSTANCE);
+    await apiRequest(`/message/sendText/${encoded}`, 'POST', {
+      number: currentChat.number,
+      text: text,
+      delay: 1200
+    });
+    
+    input.value = '';
+    showToast('Mensagem enviada!', 'success');
+    
+    // Adicionar mensagem temporária
+    const container = document.getElementById('messagesArea');
+    if (container.innerHTML.includes('Nenhuma mensagem')) container.innerHTML = '';
+    container.innerHTML += `<div class="message out">${escapeHtml(text)}</div>`;
+    container.scrollTop = container.scrollHeight;
+    
+    // Recarregar mensagens depois
+    setTimeout(() => loadMessages(currentChat.jid), 1500);
+  } catch (err) {
+    showToast(`Erro: ${err.message}`, 'error');
+    console.error(err);
+  }
+}
+
+// STATUS
+function updateStatus(newStatus) {
+  if (!currentChat) return;
+  statusMap[currentChat.jid] = newStatus;
+  localStorage.setItem('chat_status', JSON.stringify(statusMap));
+  renderChatList();
+  showToast(`Status alterado para ${newStatus === 'pendente' ? 'Pendente' : newStatus === 'em_atendimento' ? 'Em atendimento' : 'Finalizado'}`);
+}
+
+// FILTROS
+function filterChats() {
+  currentFilter = document.getElementById('searchInput').value;
+  renderChatList();
+}
+
+function setTab(tab, btn) {
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderChatList();
+}
+
+async function loadAll() {
+  showToast('Atualizando...');
+  await loadChats();
+  if (currentChat) await loadMessages(currentChat.jid);
+}
+
+// INICIAR
+loadChats();
+
+// Auto-refresh a cada 15 segundos
+setInterval(() => {
+  loadChats();
+  if (currentChat) loadMessages(currentChat.jid);
+}, 15000);
+</script>
+</body>
+</html>
