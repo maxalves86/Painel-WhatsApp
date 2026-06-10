@@ -380,7 +380,11 @@ async function loadContacts() {
 
 function getFiltered() {
   return convs.filter(c => {
-    const jid = c.id || c.remoteJid || c.jid || '';
+    const jid =
+  c.remoteJidAlt ||
+  c.remoteJid ||
+  c.jid ||
+  '';
     const pureNum = jid.split('@')[0];
     const name = (c.name || c.pushName || pureNum).toLowerCase();
     const txtOk = !filterText || name.includes(filterText.toLowerCase()) || pureNum.includes(filterText);
@@ -401,7 +405,10 @@ function renderConvList() {
 
   let h = '';
   list.forEach(c => {
-    const jid = c.id || c.remoteJid || c.jid;
+    const jid =
+  c.remoteJidAlt ||
+  c.remoteJid ||
+  c.jid;
     const ac = avc(jid);
     const pureNum = jid.split('@')[0];
     const displayName = c.name || c.pushName || ('+' + pureNum);
@@ -430,6 +437,7 @@ function renderConvList() {
 }
 
 async function selectConv(jid, name) {
+    console.log('SELECTED JID:', jid);
   activeId = jid;
   const pureNum = jid.split('@')[0];
   const ac = avc(jid);
