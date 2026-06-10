@@ -24,7 +24,7 @@ body{font-family:'Segoe UI',sans-serif;background:#f0f2f5;height:100vh;overflow:
 .avatar{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold;margin-right:12px}
 .conv-info{flex:1}
 .conv-name{font-weight:500;font-size:14px}
-.conv-number{font-size:11px;color:#666;margin-top:2px;font-family:monospace}
+.conv-number{font-size:12px;color:#075e54;margin-top:2px;font-family:monospace}
 .conv-badges{display:flex;gap:4px;margin-top:4px}
 .badge{font-size:10px;padding:2px 6px;border-radius:4px}
 .badge-pendente{background:#fff3cd;color:#856404}
@@ -35,7 +35,7 @@ body{font-family:'Segoe UI',sans-serif;background:#f0f2f5;height:100vh;overflow:
 .chat-header{background:#fff;padding:12px 16px;border-bottom:1px solid #e0e0e0;display:flex;align-items:center;gap:12px}
 .chat-info{flex:1}
 .chat-name{font-weight:600;font-size:16px}
-.chat-number{font-size:11px;color:#666;font-family:monospace}
+.chat-number{font-size:12px;color:#075e54;font-family:monospace}
 .status-buttons{display:flex;gap:8px}
 .status-btn{padding:6px 12px;border:1px solid #ddd;border-radius:20px;cursor:pointer;font-size:11px;background:#fff}
 .status-btn:hover{background:#f0f0f0}
@@ -55,7 +55,6 @@ body{font-family:'Segoe UI',sans-serif;background:#f0f2f5;height:100vh;overflow:
 .loading{padding:20px;text-align:center;color:#999}
 .spin{display:inline-block;width:20px;height:20px;border:2px solid #ddd;border-top-color:#075e54;border-radius:50%;animation:spin 0.8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-.debug-panel{background:#f5f5f5;padding:8px;font-size:10px;font-family:monospace;border-top:1px solid #ddd;max-height:120px;overflow:auto}
 .toast{position:fixed;bottom:20px;right:20px;background:#333;color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;z-index:1000;opacity:0;transition:opacity 0.3s}
 .toast.show{opacity:1}
 </style>
@@ -63,10 +62,9 @@ body{font-family:'Segoe UI',sans-serif;background:#f0f2f5;height:100vh;overflow:
 <body>
 
 <div class="app">
-  <!-- Sidebar -->
   <div class="sidebar">
     <div class="sidebar-header">
-      <h2>💬 Atendimento <button onclick="loadAll()" style="background:none;border:none;cursor:pointer">🔄</button></h2>
+      <h2>💬 Atendimento <button onclick="loadChats()" style="background:none;border:none;cursor:pointer">🔄</button></h2>
     </div>
     <div class="search">
       <input type="text" id="searchInput" placeholder="Buscar contato..." oninput="filterChats()">
@@ -82,7 +80,6 @@ body{font-family:'Segoe UI',sans-serif;background:#f0f2f5;height:100vh;overflow:
     </div>
   </div>
 
-  <!-- Main -->
   <div class="main">
     <div class="chat-header" id="chatHeader" style="display:none">
       <div class="avatar" id="headerAvatar" style="background:#ccc">--</div>
@@ -97,10 +94,7 @@ body{font-family:'Segoe UI',sans-serif;background:#f0f2f5;height:100vh;overflow:
       </div>
     </div>
     <div class="messages" id="messagesArea">
-      <div class="empty-state">
-        <div>💬</div>
-        <div>Selecione uma conversa</div>
-      </div>
+      <div class="empty-state"><div>💬</div><div>Selecione uma conversa</div></div>
     </div>
     <div class="input-area" id="inputArea" style="display:none">
       <textarea id="messageInput" placeholder="Digite sua mensagem..." rows="2" onkeydown="if(event.key=='Enter'&&!event.shiftKey){event.preventDefault();sendMessage()}"></textarea>
@@ -108,20 +102,19 @@ body{font-family:'Segoe UI',sans-serif;background:#f0f2f5;height:100vh;overflow:
     </div>
   </div>
 
-  <!-- Right Panel -->
   <div class="right-panel">
-    <h4>📋 Detalhes</h4>
+    <h4>📋 Detalhes do Contato</h4>
     <div class="detail-row">
       <div class="detail-label">Nome</div>
       <div class="detail-value" id="detailName">-</div>
     </div>
     <div class="detail-row">
-      <div class="detail-label">Remote JID (Raw)</div>
-      <div class="detail-value" id="detailJid" style="font-size:10px">-</div>
+      <div class="detail-label">Número WhatsApp</div>
+      <div class="detail-value" id="detailNumber" style="color:#075e54;font-weight:bold">-</div>
     </div>
     <div class="detail-row">
-      <div class="detail-label">Número Extraído</div>
-      <div class="detail-value" id="detailNumber">-</div>
+      <div class="detail-label">Remote JID (LID)</div>
+      <div class="detail-value" id="detailJid" style="font-size:10px">-</div>
     </div>
     <div class="detail-row">
       <div class="detail-label">Tipo</div>
@@ -131,35 +124,21 @@ body{font-family:'Segoe UI',sans-serif;background:#f0f2f5;height:100vh;overflow:
       <div class="detail-label">Instância</div>
       <div class="detail-value">Novo teste</div>
     </div>
-    <div class="debug-panel" id="debugPanel">
-      <strong>📡 Logs:</strong><br>
-      Aguardando...
-    </div>
   </div>
 </div>
 
 <div id="toast" class="toast"></div>
 
 <script>
-// CONFIGURAÇÃO
 const BASE_URL = "https://evolution-api-pktx.srv1726422.hstgr.cloud";
 const API_KEY = "BA6AD448919F-4C50-9C6D-67F36EFDDA95";
 const INSTANCE = "Novo teste";
 
-// ESTADO
 let chats = [];
 let currentChat = null;
 let currentFilter = '';
 let currentTab = 'all';
 let statusMap = JSON.parse(localStorage.getItem('chat_status') || '{}');
-
-function addDebugLog(msg) {
-  const panel = document.getElementById('debugPanel');
-  const timestamp = new Date().toLocaleTimeString();
-  panel.innerHTML += `<br>${timestamp} - ${msg}`;
-  panel.scrollTop = panel.scrollHeight;
-  console.log(msg);
-}
 
 function showToast(msg) {
   const toast = document.getElementById('toast');
@@ -174,98 +153,111 @@ async function apiRequest(endpoint, method = 'POST', body = null) {
   const options = { method, headers };
   if (body) options.body = JSON.stringify(body);
   
-  addDebugLog(`📡 ${method} ${endpoint}`);
-  
   try {
     const resp = await fetch(url, options);
     const data = await resp.json();
-    addDebugLog(`✅ Status ${resp.status}`);
     if (!resp.ok) throw new Error(data.message || data.error || `HTTP ${resp.status}`);
     return data;
   } catch (err) {
-    addDebugLog(`❌ Erro: ${err.message}`);
+    console.error(`Erro ${endpoint}:`, err);
     throw err;
   }
 }
 
-function extractNumber(jid) {
-  if (!jid) return '';
-  // Remove qualquer sufixo @...
-  const cleaned = jid.split('@')[0];
-  // Se for um ID que parece número (apenas dígitos e +)
-  if (/^[\+\d]+$/.test(cleaned)) {
-    return cleaned;
+// Função principal para extrair o número real do WhatsApp
+function extractRealNumber(chat) {
+  // 1. Tenta pegar do lastMessage.key.remoteJidAlt (mais confiável)
+  if (chat.lastMessage?.key?.remoteJidAlt) {
+    const altJid = chat.lastMessage.key.remoteJidAlt;
+    const number = altJid.split('@')[0];
+    console.log(`📱 Número real encontrado em remoteJidAlt: ${number}`);
+    return number;
   }
-  return jid;
+  
+  // 2. Tenta pegar do remoteJid se for @c.us ou @s.whatsapp.net
+  const remoteJid = chat.remoteJid || chat.id || chat.jid;
+  if (remoteJid && (remoteJid.includes('@c.us') || remoteJid.includes('@s.whatsapp.net'))) {
+    const number = remoteJid.split('@')[0];
+    console.log(`📱 Número encontrado em remoteJid: ${number}`);
+    return number;
+  }
+  
+  // 3. Se não encontrou, retorna o LID (mas não vai funcionar para enviar)
+  const lidNumber = remoteJid?.split('@')[0] || '';
+  console.log(`⚠️ Usando LID (pode não funcionar): ${lidNumber}`);
+  return lidNumber;
+}
+
+function getContactName(chat) {
+  // Tenta extrair o nome do contato
+  if (chat.pushName && chat.pushName !== 'null' && chat.pushName !== null) {
+    return chat.pushName;
+  }
+  if (chat.name && chat.name !== 'null') {
+    return chat.name;
+  }
+  if (chat.senderName) {
+    return chat.senderName;
+  }
+  // Se não tem nome, tenta extrair do número
+  const number = extractRealNumber(chat);
+  if (number && number.length >= 10) {
+    // Formata para exibição
+    if (number.startsWith('55') && number.length === 13) {
+      return `+${number.slice(0,2)} ${number.slice(2,4)} ${number.slice(4,9)} ${number.slice(9)}`;
+    }
+    if (number.startsWith('55') && number.length === 12) {
+      return `+${number.slice(0,2)} ${number.slice(2,7)} ${number.slice(7)}`;
+    }
+    return number;
+  }
+  return 'Contato WhatsApp';
 }
 
 // CARREGAR CHATS
 async function loadChats() {
   try {
-    addDebugLog('🚀 Iniciando loadChats()');
+    console.log('🚀 Carregando chats...');
     const encoded = encodeURIComponent(INSTANCE);
     const data = await apiRequest(`/chat/findChats/${encoded}`, 'POST', { where: {} });
     
-    addDebugLog(`📦 Dados recebidos: ${JSON.stringify(data).substring(0, 200)}...`);
-    
-    let rawChats = [];
-    if (Array.isArray(data)) {
-      rawChats = data;
-      addDebugLog(`✅ É um array com ${data.length} itens`);
-    } else if (data?.records) {
-      rawChats = data.records;
-      addDebugLog(`✅ É data.records com ${data.records.length} itens`);
-    } else if (data?.chats) {
-      rawChats = data.chats;
-      addDebugLog(`✅ É data.chats com ${data.chats.length} itens`);
-    } else {
-      addDebugLog(`⚠️ Estrutura desconhecida: ${Object.keys(data)}`);
-      rawChats = [];
-    }
-    
-    // Mostrar estrutura do primeiro chat para debug
-    if (rawChats.length > 0) {
-      addDebugLog(`📋 Primeiro chat: ${JSON.stringify(rawChats[0])}`);
-    }
+    let rawChats = Array.isArray(data) ? data : (data?.records || data?.chats || []);
+    console.log(`📦 ${rawChats.length} chats encontrados`);
     
     chats = rawChats.map(chat => {
-      // Tentar diferentes formas de obter o remoteJid
-      const jid = chat.remoteJid || chat.id || chat.jid || chat.remoteJidAlt || '';
-      const number = extractNumber(jid);
+      const realNumber = extractRealNumber(chat);
+      const displayName = getContactName(chat);
+      const isBot = displayName === 'BOT' || chat.pushName === 'BOT';
+      const remoteJid = chat.remoteJid || chat.id || chat.jid;
       
-      // Tentar diferentes formas de obter o nome
-      const name = chat.name || chat.pushName || chat.senderName || chat.contactName || number;
-      
-      const isBot = name === 'BOT' || chat.pushName === 'BOT' || name?.toLowerCase().includes('bot');
-      
-      addDebugLog(`📞 Processando: JID=${jid} | Nome=${name} | Número=${number}`);
+      console.log(`📞 Chat: Nome=${displayName} | Número=${realNumber} | JID=${remoteJid}`);
       
       return {
-        jid: jid,
-        number: number,
-        name: name,
+        jid: remoteJid,
+        number: realNumber,
+        name: displayName,
         isBot: isBot,
-        rawData: chat
+        raw: chat
       };
     });
     
-    // Remove duplicatas
+    // Remove duplicatas pelo número real
     const unique = new Map();
     chats.forEach(c => { 
-      if (c.jid && !unique.has(c.jid)) {
+      if (c.number && !unique.has(c.number)) {
+        unique.set(c.number, c);
+      } else if (c.jid && !unique.has(c.jid)) {
         unique.set(c.jid, c);
       }
     });
     chats = Array.from(unique.values());
     
-    addDebugLog(`✅ ${chats.length} chats processados`);
+    console.log(`✅ ${chats.length} chats processados`);
     renderChatList();
-    
-    if (chats.length === 0) showToast('Nenhuma conversa encontrada');
-    else showToast(`${chats.length} conversas carregadas`);
+    showToast(`${chats.length} conversas carregadas`);
     
   } catch (err) {
-    addDebugLog(`❌ ERRO FATAL: ${err.message}`);
+    console.error(err);
     document.getElementById('convList').innerHTML = `<div class="loading">❌ Erro: ${err.message}</div>`;
   }
 }
@@ -273,7 +265,8 @@ async function loadChats() {
 function renderChatList() {
   const container = document.getElementById('convList');
   let filtered = chats.filter(chat => {
-    if (currentFilter && !chat.name.toLowerCase().includes(currentFilter.toLowerCase()) && !chat.number.includes(currentFilter)) return false;
+    if (currentFilter && !chat.name.toLowerCase().includes(currentFilter.toLowerCase()) && 
+        !chat.number.includes(currentFilter)) return false;
     const status = statusMap[chat.jid] || 'pendente';
     if (currentTab !== 'all' && status !== currentTab) return false;
     return true;
@@ -287,20 +280,20 @@ function renderChatList() {
   let html = '';
   filtered.forEach(chat => {
     const status = statusMap[chat.jid] || 'pendente';
-    let statusClass = 'badge-pendente';
-    let statusText = 'Pendente';
+    let statusClass = 'badge-pendente', statusText = 'Pendente';
     if (status === 'em_atendimento') { statusClass = 'badge-ativo'; statusText = 'Ativo'; }
     if (status === 'finalizado') { statusClass = 'badge-finalizado'; statusText = 'Finalizado'; }
     
     const bgColor = getAvatarColor(chat.jid);
     const isActive = currentChat?.jid === chat.jid;
+    const formattedNumber = formatPhoneNumber(chat.number);
     
     html += `
       <div class="conv-item ${isActive ? 'active' : ''}" onclick="selectChat('${chat.jid.replace(/'/g, "\\'")}')">
         <div class="avatar" style="background:${bgColor}">${chat.name.substring(0,2).toUpperCase()}</div>
         <div class="conv-info">
           <div class="conv-name">${chat.isBot ? '🤖 ' : ''}${escapeHtml(chat.name)}</div>
-          <div class="conv-number">${escapeHtml(chat.number)}</div>
+          <div class="conv-number">${escapeHtml(formattedNumber)}</div>
           <div class="conv-badges">
             <span class="badge ${statusClass}">${statusText}</span>
             ${chat.isBot ? '<span class="badge badge-bot">🤖 Bot</span>' : ''}
@@ -310,6 +303,21 @@ function renderChatList() {
     `;
   });
   container.innerHTML = html;
+}
+
+function formatPhoneNumber(num) {
+  if (!num) return '';
+  const clean = num.replace(/\D/g, '');
+  if (clean.length === 13 && clean.startsWith('55')) {
+    return `+${clean.slice(0,2)} ${clean.slice(2,4)} ${clean.slice(4,9)} ${clean.slice(9)}`;
+  }
+  if (clean.length === 12 && clean.startsWith('55')) {
+    return `+${clean.slice(0,2)} ${clean.slice(2,7)} ${clean.slice(7)}`;
+  }
+  if (clean.length === 11) {
+    return `+55 ${clean.slice(0,2)} ${clean.slice(2,7)} ${clean.slice(7)}`;
+  }
+  return `+${clean}`;
 }
 
 function getAvatarColor(str) {
@@ -328,74 +336,49 @@ function escapeHtml(text) {
 
 // SELECIONAR CHAT
 async function selectChat(jid) {
-  addDebugLog(`🔍 Selecionando chat: ${jid}`);
-  
+  console.log(`🔍 Selecionando: ${jid}`);
   const chat = chats.find(c => c.jid === jid);
-  if (!chat) {
-    addDebugLog(`❌ Chat não encontrado para JID: ${jid}`);
-    return;
-  }
+  if (!chat) return;
   
   currentChat = chat;
-  addDebugLog(`✅ Chat selecionado: ${chat.name} | Número: ${chat.number}`);
+  const formattedNumber = formatPhoneNumber(chat.number);
   
-  // Atualizar UI
   document.getElementById('chatHeader').style.display = 'flex';
   document.getElementById('inputArea').style.display = 'flex';
   document.getElementById('chatName').textContent = chat.isBot ? `🤖 ${chat.name}` : chat.name;
-  document.getElementById('chatNumber').textContent = chat.number;
+  document.getElementById('chatNumber').textContent = formattedNumber;
   document.getElementById('detailName').textContent = chat.name;
+  document.getElementById('detailNumber').textContent = formattedNumber;
   document.getElementById('detailJid').textContent = chat.jid;
-  document.getElementById('detailNumber').textContent = chat.number;
-  document.getElementById('detailType').textContent = chat.isBot ? '🤖 Bot' : '👤 Contato';
+  document.getElementById('detailType').textContent = chat.isBot ? '🤖 Bot' : '👤 Contato Real';
   
   const bgColor = getAvatarColor(chat.jid);
   document.getElementById('headerAvatar').style.background = bgColor;
   document.getElementById('headerAvatar').textContent = chat.name.substring(0,2).toUpperCase();
   
-  // Carregar mensagens
   document.getElementById('messagesArea').innerHTML = '<div class="loading"><div class="spin"></div><br>Carregando mensagens...</div>';
   await loadMessages(chat.jid);
-  
   renderChatList();
 }
 
 async function loadMessages(jid) {
   try {
-    addDebugLog(`📨 Buscando mensagens para: ${jid}`);
     const encoded = encodeURIComponent(INSTANCE);
     const data = await apiRequest(`/chat/findMessages/${encoded}`, 'POST', {
       where: { remoteJid: jid },
       limit: 50
     });
     
-    addDebugLog(`📦 Resposta mensagens: ${JSON.stringify(data).substring(0, 200)}...`);
-    
-    let messages = [];
-    if (data?.messages && Array.isArray(data.messages)) {
-      messages = data.messages;
-      addDebugLog(`✅ messages array com ${messages.length}`);
-    } else if (Array.isArray(data)) {
-      messages = data;
-      addDebugLog(`✅ array direto com ${messages.length}`);
-    } else if (data?.records && Array.isArray(data.records)) {
-      messages = data.records;
-      addDebugLog(`✅ records array com ${messages.length}`);
-    } else {
-      addDebugLog(`⚠️ Estrutura inesperada: ${Object.keys(data)}`);
-      messages = [];
-    }
-    
+    let messages = Array.isArray(data) ? data : (data?.messages || data?.records || []);
     renderMessages(messages);
   } catch (err) {
-    addDebugLog(`❌ Erro loadMessages: ${err.message}`);
+    console.error(err);
     document.getElementById('messagesArea').innerHTML = '<div class="empty-state">❌ Erro ao carregar mensagens</div>';
   }
 }
 
 function renderMessages(messages) {
   const container = document.getElementById('messagesArea');
-  
   if (!messages || messages.length === 0) {
     container.innerHTML = '<div class="empty-state">💬 Nenhuma mensagem ainda<br>Envie algo para começar!</div>';
     return;
@@ -405,24 +388,13 @@ function renderMessages(messages) {
   for (const msg of messages) {
     const isFromMe = msg.key?.fromMe === true || msg.fromMe === true;
     const direction = isFromMe ? 'out' : 'in';
-    
-    let text = msg.message?.conversation || 
-               msg.message?.extendedTextMessage?.text || 
-               msg.text || 
-               msg.body || 
-               msg.content;
-               
+    let text = msg.message?.conversation || msg.message?.extendedTextMessage?.text || msg.text || msg.body || msg.content;
     if (!text && msg.message?.imageMessage) text = '📷 Imagem';
-    if (!text && msg.message?.audioMessage) text = '🎵 Áudio';
-    if (!text && msg.message?.documentMessage) text = '📎 Documento';
     if (!text) text = isFromMe ? 'Mensagem enviada' : 'Mensagem recebida';
-    
     html += `<div class="message ${direction}">${escapeHtml(text)}</div>`;
   }
-  
   container.innerHTML = html;
   container.scrollTop = container.scrollHeight;
-  addDebugLog(`✅ ${messages.length} mensagens renderizadas`);
 }
 
 // ENVIAR MENSAGEM
@@ -436,7 +408,7 @@ async function sendMessage() {
   const text = input.value.trim();
   if (!text) return;
   
-  addDebugLog(`📤 Enviando para ${currentChat.number}: "${text}"`);
+  console.log(`📤 Enviando para ${currentChat.number}: "${text}"`);
   
   try {
     const encoded = encodeURIComponent(INSTANCE);
@@ -447,35 +419,28 @@ async function sendMessage() {
     });
     
     input.value = '';
-    showToast('Mensagem enviada!');
-    addDebugLog(`✅ Mensagem enviada com sucesso`);
+    showToast('Mensagem enviada! ✅');
     
-    // Adicionar mensagem temporária
     const container = document.getElementById('messagesArea');
     if (container.innerHTML.includes('Nenhuma mensagem')) container.innerHTML = '';
     container.innerHTML += `<div class="message out">${escapeHtml(text)}</div>`;
     container.scrollTop = container.scrollHeight;
-    
-    // Recarregar mensagens
     setTimeout(() => loadMessages(currentChat.jid), 1500);
   } catch (err) {
-    addDebugLog(`❌ Falha ao enviar: ${err.message}`);
+    console.error(err);
     showToast(`Erro: ${err.message}`);
   }
 }
 
-// STATUS
 function updateStatus(newStatus) {
   if (!currentChat) return;
   statusMap[currentChat.jid] = newStatus;
   localStorage.setItem('chat_status', JSON.stringify(statusMap));
   renderChatList();
-  const statusText = newStatus === 'pendente' ? 'Pendente' : newStatus === 'em_atendimento' ? 'Em atendimento' : 'Finalizado';
+  const statusText = {pendente:'Pendente', em_atendimento:'Em atendimento', finalizado:'Finalizado'}[newStatus];
   showToast(`Status: ${statusText}`);
-  addDebugLog(`📝 Status alterado para ${statusText}`);
 }
 
-// FILTROS
 function filterChats() {
   currentFilter = document.getElementById('searchInput').value;
   renderChatList();
@@ -488,20 +453,9 @@ function setTab(tab, btn) {
   renderChatList();
 }
 
-async function loadAll() {
-  showToast('Atualizando...');
-  await loadChats();
-  if (currentChat) await loadMessages(currentChat.jid);
-}
-
 // INICIAR
 loadChats();
-
-// Auto-refresh
-setInterval(() => {
-  loadChats();
-  if (currentChat) loadMessages(currentChat.jid);
-}, 15000);
+setInterval(() => { loadChats(); if (currentChat) loadMessages(currentChat.jid); }, 15000);
 </script>
 </body>
 </html>
