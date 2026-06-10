@@ -457,10 +457,15 @@ async function selectConv(jid, name) {
 
 async function loadMessages(jid) {
   try {
-    const data = await apiFetch(`/chat/findMessages/${INSTANCE}`, {
-      where: { key: { remoteJid: jid } },
-      limit: 30
-    });
+    const data = await apiFetch(
+  `/chat/findMessages/${INSTANCE}`,
+  {
+    where: {
+      remoteJid: jid
+    },
+    limit: 30
+  }
+);
     const msgs = Array.isArray(data) ? data : (data.records || data.messages || []);
     renderMsgs(msgs);
   } catch(e) {
