@@ -21,32 +21,31 @@ body{font-family:'Segoe UI',sans-serif;background:#f0f2f5;height:100vh;overflow:
 .conv-item{display:flex;align-items:center;padding:12px;cursor:pointer;border-bottom:1px solid #f0f0f0}
 .conv-item:hover{background:#f5f5f5}
 .conv-item.active{background:#e8f5e9}
-.avatar{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold;margin-right:12px}
-.conv-info{flex:1}
-.conv-name{font-weight:500;font-size:14px}
-.conv-number{font-size:12px;color:#075e54;margin-top:2px;font-family:monospace}
+.avatar{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold;margin-right:12px;flex-shrink:0}
+.conv-info{flex:1;min-width:0}
+.conv-name{font-weight:500;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.conv-number{font-size:11px;color:#075e54;margin-top:2px;font-family:monospace}
 .conv-badges{display:flex;gap:4px;margin-top:4px}
 .badge{font-size:10px;padding:2px 6px;border-radius:4px}
 .badge-pendente{background:#fff3cd;color:#856404}
 .badge-ativo{background:#d4edda;color:#155724}
 .badge-finalizado{background:#f8d7da;color:#721c24}
-.badge-bot{background:#e2e3ff;color:#4a2c99}
-.main{flex:1;display:flex;flex-direction:column;background:#f0f2f5}
+.main{flex:1;display:flex;flex-direction:column;background:#f0f2f5;min-width:0}
 .chat-header{background:#fff;padding:12px 16px;border-bottom:1px solid #e0e0e0;display:flex;align-items:center;gap:12px}
-.chat-info{flex:1}
-.chat-name{font-weight:600;font-size:16px}
-.chat-number{font-size:12px;color:#075e54;font-family:monospace}
-.status-buttons{display:flex;gap:8px}
+.chat-info{flex:1;min-width:0}
+.chat-name{font-weight:600;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chat-number{font-size:11px;color:#075e54;font-family:monospace}
+.status-buttons{display:flex;gap:8px;flex-shrink:0}
 .status-btn{padding:6px 12px;border:1px solid #ddd;border-radius:20px;cursor:pointer;font-size:11px;background:#fff}
 .status-btn:hover{background:#f0f0f0}
 .messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:8px}
-.message{max-width:70%;padding:8px 12px;border-radius:12px;font-size:13px}
+.message{max-width:70%;padding:8px 12px;border-radius:12px;font-size:13px;word-break:break-word}
 .message.out{background:#dcf8c6;align-self:flex-end}
 .message.in{background:#fff;align-self:flex-start;border:1px solid #e0e0e0}
 .input-area{padding:12px;background:#fff;border-top:1px solid #e0e0e0;display:flex;gap:8px}
 .input-area textarea{flex:1;padding:10px;border:1px solid #ddd;border-radius:20px;resize:none;font-family:inherit;font-size:14px}
 .input-area button{background:#075e54;color:#fff;border:none;border-radius:20px;padding:0 20px;cursor:pointer}
-.right-panel{width:300px;background:#fff;border-left:1px solid #e0e0e0;padding:16px;overflow-y:auto}
+.right-panel{width:300px;background:#fff;border-left:1px solid #e0e0e0;padding:16px;overflow-y:auto;flex-shrink:0}
 .right-panel h4{font-size:14px;margin-bottom:12px;color:#666}
 .detail-row{margin-bottom:12px}
 .detail-label{font-size:11px;color:#999;margin-bottom:2px}
@@ -64,7 +63,7 @@ body{font-family:'Segoe UI',sans-serif;background:#f0f2f5;height:100vh;overflow:
 <div class="app">
   <div class="sidebar">
     <div class="sidebar-header">
-      <h2>💬 Atendimento <button onclick="loadChats()" style="background:none;border:none;cursor:pointer">🔄</button></h2>
+      <h2>💬 Atendimento <button onclick="loadChats()" style="background:none;border:none;cursor:pointer;font-size:16px">🔄</button></h2>
     </div>
     <div class="search">
       <input type="text" id="searchInput" placeholder="Buscar contato..." oninput="filterChats()">
@@ -164,45 +163,30 @@ async function apiRequest(endpoint, method = 'POST', body = null) {
   }
 }
 
-// Função principal para extrair o número real do WhatsApp
 function extractRealNumber(chat) {
-  // 1. Tenta pegar do lastMessage.key.remoteJidAlt (mais confiável)
+  // Prioridade 1: remoteJidAlt (tem o número real)
   if (chat.lastMessage?.key?.remoteJidAlt) {
     const altJid = chat.lastMessage.key.remoteJidAlt;
-    const number = altJid.split('@')[0];
-    console.log(`📱 Número real encontrado em remoteJidAlt: ${number}`);
-    return number;
+    return altJid.split('@')[0];
   }
   
-  // 2. Tenta pegar do remoteJid se for @c.us ou @s.whatsapp.net
+  // Prioridade 2: se o remoteJid for @c.us ou @s.whatsapp.net
   const remoteJid = chat.remoteJid || chat.id || chat.jid;
   if (remoteJid && (remoteJid.includes('@c.us') || remoteJid.includes('@s.whatsapp.net'))) {
-    const number = remoteJid.split('@')[0];
-    console.log(`📱 Número encontrado em remoteJid: ${number}`);
-    return number;
+    return remoteJid.split('@')[0];
   }
   
-  // 3. Se não encontrou, retorna o LID (mas não vai funcionar para enviar)
-  const lidNumber = remoteJid?.split('@')[0] || '';
-  console.log(`⚠️ Usando LID (pode não funcionar): ${lidNumber}`);
-  return lidNumber;
+  // Prioridade 3: retorna o LID (último recurso)
+  return remoteJid?.split('@')[0] || '';
 }
 
 function getContactName(chat) {
-  // Tenta extrair o nome do contato
-  if (chat.pushName && chat.pushName !== 'null' && chat.pushName !== null) {
-    return chat.pushName;
-  }
-  if (chat.name && chat.name !== 'null') {
-    return chat.name;
-  }
-  if (chat.senderName) {
-    return chat.senderName;
-  }
-  // Se não tem nome, tenta extrair do número
+  if (chat.pushName && chat.pushName !== 'null' && chat.pushName) return chat.pushName;
+  if (chat.name && chat.name !== 'null') return chat.name;
+  if (chat.senderName) return chat.senderName;
+  
   const number = extractRealNumber(chat);
   if (number && number.length >= 10) {
-    // Formata para exibição
     if (number.startsWith('55') && number.length === 13) {
       return `+${number.slice(0,2)} ${number.slice(2,4)} ${number.slice(4,9)} ${number.slice(9)}`;
     }
@@ -221,34 +205,34 @@ async function loadChats() {
     const encoded = encodeURIComponent(INSTANCE);
     const data = await apiRequest(`/chat/findChats/${encoded}`, 'POST', { where: {} });
     
-    let rawChats = Array.isArray(data) ? data : (data?.records || data?.chats || []);
+    let rawChats = [];
+    if (Array.isArray(data)) rawChats = data;
+    else if (data?.records) rawChats = data.records;
+    else if (data?.chats) rawChats = data.chats;
+    
     console.log(`📦 ${rawChats.length} chats encontrados`);
     
     chats = rawChats.map(chat => {
       const realNumber = extractRealNumber(chat);
       const displayName = getContactName(chat);
-      const isBot = displayName === 'BOT' || chat.pushName === 'BOT';
       const remoteJid = chat.remoteJid || chat.id || chat.jid;
       
-      console.log(`📞 Chat: Nome=${displayName} | Número=${realNumber} | JID=${remoteJid}`);
+      console.log(`📞 Nome: ${displayName} | Número: ${realNumber} | JID: ${remoteJid}`);
       
       return {
         jid: remoteJid,
         number: realNumber,
         name: displayName,
-        isBot: isBot,
+        isBot: displayName === 'BOT',
         raw: chat
       };
     });
     
-    // Remove duplicatas pelo número real
+    // Remove duplicatas
     const unique = new Map();
     chats.forEach(c => { 
-      if (c.number && !unique.has(c.number)) {
-        unique.set(c.number, c);
-      } else if (c.jid && !unique.has(c.jid)) {
-        unique.set(c.jid, c);
-      }
+      if (c.number && !unique.has(c.number)) unique.set(c.number, c);
+      else if (c.jid && !unique.has(c.jid)) unique.set(c.jid, c);
     });
     chats = Array.from(unique.values());
     
@@ -260,6 +244,21 @@ async function loadChats() {
     console.error(err);
     document.getElementById('convList').innerHTML = `<div class="loading">❌ Erro: ${err.message}</div>`;
   }
+}
+
+function formatPhoneNumber(num) {
+  if (!num) return '';
+  const clean = num.replace(/\D/g, '');
+  if (clean.length === 13 && clean.startsWith('55')) {
+    return `+${clean.slice(0,2)} ${clean.slice(2,4)} ${clean.slice(4,9)} ${clean.slice(9)}`;
+  }
+  if (clean.length === 12 && clean.startsWith('55')) {
+    return `+${clean.slice(0,2)} ${clean.slice(2,7)} ${clean.slice(7)}`;
+  }
+  if (clean.length === 11) {
+    return `+55 ${clean.slice(0,2)} ${clean.slice(2,7)} ${clean.slice(7)}`;
+  }
+  return clean;
 }
 
 function renderChatList() {
@@ -292,32 +291,16 @@ function renderChatList() {
       <div class="conv-item ${isActive ? 'active' : ''}" onclick="selectChat('${chat.jid.replace(/'/g, "\\'")}')">
         <div class="avatar" style="background:${bgColor}">${chat.name.substring(0,2).toUpperCase()}</div>
         <div class="conv-info">
-          <div class="conv-name">${chat.isBot ? '🤖 ' : ''}${escapeHtml(chat.name)}</div>
+          <div class="conv-name">${escapeHtml(chat.name)}</div>
           <div class="conv-number">${escapeHtml(formattedNumber)}</div>
           <div class="conv-badges">
             <span class="badge ${statusClass}">${statusText}</span>
-            ${chat.isBot ? '<span class="badge badge-bot">🤖 Bot</span>' : ''}
           </div>
         </div>
       </div>
     `;
   });
   container.innerHTML = html;
-}
-
-function formatPhoneNumber(num) {
-  if (!num) return '';
-  const clean = num.replace(/\D/g, '');
-  if (clean.length === 13 && clean.startsWith('55')) {
-    return `+${clean.slice(0,2)} ${clean.slice(2,4)} ${clean.slice(4,9)} ${clean.slice(9)}`;
-  }
-  if (clean.length === 12 && clean.startsWith('55')) {
-    return `+${clean.slice(0,2)} ${clean.slice(2,7)} ${clean.slice(7)}`;
-  }
-  if (clean.length === 11) {
-    return `+55 ${clean.slice(0,2)} ${clean.slice(2,7)} ${clean.slice(7)}`;
-  }
-  return `+${clean}`;
 }
 
 function getAvatarColor(str) {
@@ -334,67 +317,139 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
-// SELECIONAR CHAT
+// SELECIONAR CHAT - VERSÃO CORRIGIDA
 async function selectChat(jid) {
-  console.log(`🔍 Selecionando: ${jid}`);
+  console.log(`🔍 Selecionando chat: ${jid}`);
   const chat = chats.find(c => c.jid === jid);
-  if (!chat) return;
+  if (!chat) {
+    console.error('Chat não encontrado');
+    return;
+  }
   
   currentChat = chat;
   const formattedNumber = formatPhoneNumber(chat.number);
   
+  // Atualizar header
   document.getElementById('chatHeader').style.display = 'flex';
   document.getElementById('inputArea').style.display = 'flex';
-  document.getElementById('chatName').textContent = chat.isBot ? `🤖 ${chat.name}` : chat.name;
+  document.getElementById('chatName').textContent = chat.name;
   document.getElementById('chatNumber').textContent = formattedNumber;
+  
+  // Atualizar painel direito
   document.getElementById('detailName').textContent = chat.name;
   document.getElementById('detailNumber').textContent = formattedNumber;
   document.getElementById('detailJid').textContent = chat.jid;
-  document.getElementById('detailType').textContent = chat.isBot ? '🤖 Bot' : '👤 Contato Real';
+  document.getElementById('detailType').textContent = 'Contato Real';
   
   const bgColor = getAvatarColor(chat.jid);
   document.getElementById('headerAvatar').style.background = bgColor;
   document.getElementById('headerAvatar').textContent = chat.name.substring(0,2).toUpperCase();
   
+  // Carregar mensagens
   document.getElementById('messagesArea').innerHTML = '<div class="loading"><div class="spin"></div><br>Carregando mensagens...</div>';
   await loadMessages(chat.jid);
   renderChatList();
 }
 
+// CARREGAR MENSAGENS - VERSÃO CORRIGIDA COM MAIS LOGS
 async function loadMessages(jid) {
   try {
+    console.log(`📨 Buscando mensagens para JID: ${jid}`);
     const encoded = encodeURIComponent(INSTANCE);
+    
+    // Tenta buscar mensagens
     const data = await apiRequest(`/chat/findMessages/${encoded}`, 'POST', {
       where: { remoteJid: jid },
-      limit: 50
+      limit: 100
     });
     
-    let messages = Array.isArray(data) ? data : (data?.messages || data?.records || []);
+    console.log('📦 Resposta da API de mensagens:', data);
+    
+    let messages = [];
+    
+    // Tenta extrair mensagens de diferentes formatos de resposta
+    if (Array.isArray(data)) {
+      messages = data;
+      console.log(`✅ Array com ${messages.length} mensagens`);
+    } else if (data?.messages && Array.isArray(data.messages)) {
+      messages = data.messages;
+      console.log(`✅ data.messages com ${messages.length} mensagens`);
+    } else if (data?.records && Array.isArray(data.records)) {
+      messages = data.records;
+      console.log(`✅ data.records com ${messages.length} mensagens`);
+    } else if (data?.data && Array.isArray(data.data)) {
+      messages = data.data;
+      console.log(`✅ data.data com ${messages.length} mensagens`);
+    } else {
+      console.warn('⚠️ Formato de resposta não reconhecido:', Object.keys(data));
+      messages = [];
+    }
+    
+    if (messages.length === 0) {
+      console.log('ℹ️ Nenhuma mensagem encontrada para este chat');
+      document.getElementById('messagesArea').innerHTML = '<div class="empty-state">💬 Nenhuma mensagem ainda<br>Envie algo para começar!</div>';
+      return;
+    }
+    
     renderMessages(messages);
+    
   } catch (err) {
-    console.error(err);
-    document.getElementById('messagesArea').innerHTML = '<div class="empty-state">❌ Erro ao carregar mensagens</div>';
+    console.error('❌ Erro ao carregar mensagens:', err);
+    document.getElementById('messagesArea').innerHTML = `<div class="empty-state">❌ Erro ao carregar mensagens<br><small>${err.message}</small></div>`;
+    showToast(`Erro: ${err.message}`);
   }
 }
 
 function renderMessages(messages) {
   const container = document.getElementById('messagesArea');
+  
   if (!messages || messages.length === 0) {
     container.innerHTML = '<div class="empty-state">💬 Nenhuma mensagem ainda<br>Envie algo para começar!</div>';
     return;
   }
   
   let html = '';
+  
   for (const msg of messages) {
-    const isFromMe = msg.key?.fromMe === true || msg.fromMe === true;
+    // Determina se a mensagem foi enviada por mim
+    const isFromMe = msg.key?.fromMe === true || msg.fromMe === true || msg.status === 'SERVER_ACK';
     const direction = isFromMe ? 'out' : 'in';
-    let text = msg.message?.conversation || msg.message?.extendedTextMessage?.text || msg.text || msg.body || msg.content;
-    if (!text && msg.message?.imageMessage) text = '📷 Imagem';
-    if (!text) text = isFromMe ? 'Mensagem enviada' : 'Mensagem recebida';
-    html += `<div class="message ${direction}">${escapeHtml(text)}</div>`;
+    
+    // Extrai o texto da mensagem
+    let text = '';
+    
+    if (msg.message) {
+      text = msg.message.conversation || 
+             msg.message.extendedTextMessage?.text || 
+             msg.message.imageMessage?.caption ||
+             msg.message.documentMessage?.caption ||
+             (msg.message.imageMessage ? '📷 Imagem' : 
+              msg.message.audioMessage ? '🎵 Áudio' : 
+              msg.message.videoMessage ? '🎥 Vídeo' : 
+              msg.message.documentMessage ? '📎 Documento' : '[Mídia]');
+    } else if (msg.text) {
+      text = msg.text;
+    } else if (msg.body) {
+      text = msg.body;
+    } else if (msg.content) {
+      text = msg.content;
+    } else {
+      text = isFromMe ? 'Mensagem enviada' : 'Mensagem recebida';
+    }
+    
+    if (text && text !== '[Mídia]') {
+      html += `<div class="message ${direction}">${escapeHtml(text)}</div>`;
+    }
   }
-  container.innerHTML = html;
-  container.scrollTop = container.scrollHeight;
+  
+  if (html === '') {
+    container.innerHTML = '<div class="empty-state">📎 Apenas mensagens de mídia<br>Nenhum texto para exibir</div>';
+  } else {
+    container.innerHTML = html;
+    container.scrollTop = container.scrollHeight;
+  }
+  
+  console.log(`✅ Renderizadas ${messages.length} mensagens`);
 }
 
 // ENVIAR MENSAGEM
@@ -412,22 +467,32 @@ async function sendMessage() {
   
   try {
     const encoded = encodeURIComponent(INSTANCE);
-    await apiRequest(`/message/sendText/${encoded}`, 'POST', {
+    const result = await apiRequest(`/message/sendText/${encoded}`, 'POST', {
       number: currentChat.number,
       text: text,
       delay: 1200
     });
     
+    console.log('✅ Resposta do envio:', result);
+    
     input.value = '';
     showToast('Mensagem enviada! ✅');
     
+    // Adiciona mensagem temporariamente na tela
     const container = document.getElementById('messagesArea');
-    if (container.innerHTML.includes('Nenhuma mensagem')) container.innerHTML = '';
+    if (container.innerHTML.includes('Nenhuma mensagem')) {
+      container.innerHTML = '';
+    }
     container.innerHTML += `<div class="message out">${escapeHtml(text)}</div>`;
     container.scrollTop = container.scrollHeight;
-    setTimeout(() => loadMessages(currentChat.jid), 1500);
+    
+    // Recarrega mensagens para confirmar
+    setTimeout(() => {
+      if (currentChat) loadMessages(currentChat.jid);
+    }, 2000);
+    
   } catch (err) {
-    console.error(err);
+    console.error('❌ Erro ao enviar mensagem:', err);
     showToast(`Erro: ${err.message}`);
   }
 }
@@ -455,7 +520,12 @@ function setTab(tab, btn) {
 
 // INICIAR
 loadChats();
-setInterval(() => { loadChats(); if (currentChat) loadMessages(currentChat.jid); }, 15000);
+
+// Auto-refresh a cada 15 segundos
+setInterval(() => { 
+  loadChats(); 
+  if (currentChat) loadMessages(currentChat.jid); 
+}, 15000);
 </script>
 </body>
 </html>
