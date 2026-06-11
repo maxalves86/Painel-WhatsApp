@@ -187,13 +187,7 @@ function getContactName(chat) {
   
   const number = extractRealNumber(chat);
   if (number && number.length >= 10) {
-    if (number.startsWith('55') && number.length === 13) {
-      return `+${number.slice(0,2)} ${number.slice(2,4)} ${number.slice(4,9)} ${number.slice(9)}`;
-    }
-    if (number.startsWith('55') && number.length === 12) {
-      return `+${number.slice(0,2)} ${number.slice(2,7)} ${number.slice(7)}`;
-    }
-    return number;
+    return formatPhoneNumber(number);
   }
   return 'Contato WhatsApp';
 }
@@ -216,8 +210,6 @@ async function loadChats() {
       const realNumber = extractRealNumber(chat);
       const displayName = getContactName(chat);
       const remoteJid = chat.remoteJid || chat.id || chat.jid;
-      
-      console.log(`📞 Nome: ${displayName} | Número: ${realNumber} | JID: ${remoteJid}`);
       
       return {
         jid: remoteJid,
@@ -317,7 +309,7 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
-// SELECIONAR CHAT - VERSÃO CORRIGIDA
+// SELECIONAR CHAT
 async function selectChat(jid) {
   console.log(`🔍 Selecionando chat: ${jid}`);
   const chat = chats.find(c => c.jid === jid);
@@ -351,45 +343,67 @@ async function selectChat(jid) {
   renderChatList();
 }
 
-// CARREGAR MENSAGENS - VERSÃO CORRIGIDA COM MAIS LOGS
+// CARREGAR MENSAGENS - CORRIGIDO!
 async function loadMessages(jid) {
   try {
     console.log(`📨 Buscando mensagens para JID: ${jid}`);
     const encoded = encodeURIComponent(INSTANCE);
     
-    // Tenta buscar mensagens
     const data = await apiRequest(`/chat/findMessages/${encoded}`, 'POST', {
       where: { remoteJid: jid },
-      limit: 100
+      limit: 100,
+      order: [['createdAt', 'DESC']]
     });
     
-    console.log('📦 Resposta da API de mensagens:', data);
+    console.log('📦 Resposta da API:', data);
     
     let messages = [];
     
-    // Tenta extrair mensagens de diferentes formatos de resposta
-    if (Array.isArray(data)) {
+    // CORREÇÃO PRINCIPAL: O data.messages é um OBJETO, não um array
+    if (data?.messages && typeof data.messages === 'object') {
+      // Converte o objeto messages em array
+      messages = Object.values(data.messages);
+      console.log(`✅ Extraído ${messages.length} mensagens do objeto messages`);
+    } 
+    // Se for array direto
+    else if (Array.isArray(data)) {
       messages = data;
-      console.log(`✅ Array com ${messages.length} mensagens`);
-    } else if (data?.messages && Array.isArray(data.messages)) {
-      messages = data.messages;
-      console.log(`✅ data.messages com ${messages.length} mensagens`);
-    } else if (data?.records && Array.isArray(data.records)) {
+      console.log(`✅ Array direto com ${messages.length} mensagens`);
+    }
+    // Se tiver records
+    else if (data?.records && Array.isArray(data.records)) {
       messages = data.records;
       console.log(`✅ data.records com ${messages.length} mensagens`);
-    } else if (data?.data && Array.isArray(data.data)) {
+    }
+    // Se tiver data
+    else if (data?.data && Array.isArray(data.data)) {
       messages = data.data;
       console.log(`✅ data.data com ${messages.length} mensagens`);
-    } else {
-      console.warn('⚠️ Formato de resposta não reconhecido:', Object.keys(data));
-      messages = [];
+    }
+    else {
+      console.warn('⚠️ Formato não reconhecido, tentando extrair qualquer array...');
+      // Tenta encontrar qualquer array na resposta
+      for (let key in data) {
+        if (Array.isArray(data[key])) {
+          messages = data[key];
+          console.log(`✅ Encontrado array em "${key}" com ${messages.length} mensagens`);
+          break;
+        }
+      }
     }
     
-    if (messages.length === 0) {
+    if (!messages || messages.length === 0) {
       console.log('ℹ️ Nenhuma mensagem encontrada para este chat');
       document.getElementById('messagesArea').innerHTML = '<div class="empty-state">💬 Nenhuma mensagem ainda<br>Envie algo para começar!</div>';
       return;
     }
+    
+    // Ordena por timestamp (mais antigo primeiro para exibição)
+    messages.sort((a, b) => {
+      const timeA = a.messageTimestamp || a.timestamp || 0;
+      const timeB = b.messageTimestamp || b.timestamp || 0;
+      return timeA - timeB;
+    });
     
     renderMessages(messages);
     
@@ -412,7 +426,7 @@ function renderMessages(messages) {
   
   for (const msg of messages) {
     // Determina se a mensagem foi enviada por mim
-    const isFromMe = msg.key?.fromMe === true || msg.fromMe === true || msg.status === 'SERVER_ACK';
+    const isFromMe = msg.key?.fromMe === true || msg.fromMe === true;
     const direction = isFromMe ? 'out' : 'in';
     
     // Extrai o texto da mensagem
@@ -422,22 +436,17 @@ function renderMessages(messages) {
       text = msg.message.conversation || 
              msg.message.extendedTextMessage?.text || 
              msg.message.imageMessage?.caption ||
-             msg.message.documentMessage?.caption ||
              (msg.message.imageMessage ? '📷 Imagem' : 
               msg.message.audioMessage ? '🎵 Áudio' : 
               msg.message.videoMessage ? '🎥 Vídeo' : 
-              msg.message.documentMessage ? '📎 Documento' : '[Mídia]');
-    } else if (msg.text) {
-      text = msg.text;
-    } else if (msg.body) {
-      text = msg.body;
-    } else if (msg.content) {
-      text = msg.content;
-    } else {
-      text = isFromMe ? 'Mensagem enviada' : 'Mensagem recebida';
-    }
+              msg.message.documentMessage ? '📎 Documento' : '');
+    } 
     
-    if (text && text !== '[Mídia]') {
+    if (!text && msg.text) text = msg.text;
+    if (!text && msg.body) text = msg.body;
+    if (!text && msg.content) text = msg.content;
+    
+    if (text && text !== '') {
       html += `<div class="message ${direction}">${escapeHtml(text)}</div>`;
     }
   }
@@ -449,7 +458,7 @@ function renderMessages(messages) {
     container.scrollTop = container.scrollHeight;
   }
   
-  console.log(`✅ Renderizadas ${messages.length} mensagens`);
+  console.log(`✅ Renderizadas ${messages.length} mensagens, ${html.split('message').length - 1} exibidas`);
 }
 
 // ENVIAR MENSAGEM
@@ -467,13 +476,11 @@ async function sendMessage() {
   
   try {
     const encoded = encodeURIComponent(INSTANCE);
-    const result = await apiRequest(`/message/sendText/${encoded}`, 'POST', {
+    await apiRequest(`/message/sendText/${encoded}`, 'POST', {
       number: currentChat.number,
       text: text,
       delay: 1200
     });
-    
-    console.log('✅ Resposta do envio:', result);
     
     input.value = '';
     showToast('Mensagem enviada! ✅');
