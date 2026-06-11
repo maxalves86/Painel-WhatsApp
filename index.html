@@ -185,71 +185,40 @@ function getContactName(chat) {
   return 'Contato WhatsApp';
 }
 
-// Função para extrair texto da mensagem - CORRIGIDA
+// Função CORRIGIDA para extrair texto da mensagem
 function extractMessageText(msg) {
-  console.log('🔍 Analisando mensagem:', msg);
+  // Se for número/índice, não é mensagem válida
+  if (typeof msg === 'number' || !msg) {
+    return null;
+  }
   
-  // Tenta diferentes formatos que a Evolution API pode retornar
-  
-  // Formato 1: message.conversation
+  // Tenta diferentes formatos
   if (msg.message?.conversation) {
-    console.log('✅ Texto encontrado em message.conversation:', msg.message.conversation);
     return msg.message.conversation;
   }
-  
-  // Formato 2: message.extendedTextMessage.text
   if (msg.message?.extendedTextMessage?.text) {
-    console.log('✅ Texto encontrado em message.extendedTextMessage.text:', msg.message.extendedTextMessage.text);
     return msg.message.extendedTextMessage.text;
   }
-  
-  // Formato 3: text direto
   if (msg.text) {
-    console.log('✅ Texto encontrado em text:', msg.text);
     return msg.text;
   }
-  
-  // Formato 4: body
   if (msg.body) {
-    console.log('✅ Texto encontrado em body:', msg.body);
     return msg.body;
   }
-  
-  // Formato 5: content
   if (msg.content) {
-    console.log('✅ Texto encontrado em content:', msg.content);
     return msg.content;
   }
-  
-  // Formato 6: message diretamente como string
   if (typeof msg.message === 'string') {
-    console.log('✅ Texto encontrado em message (string):', msg.message);
     return msg.message;
   }
   
-  // Formato 7: key.remoteJid (não é texto, mas útil para debug)
-  if (msg.key?.remoteJid) {
-    console.log('⚠️ Mensagem sem texto, apenas metadados:', msg.key);
-  }
-  
   // Mensagens de mídia
-  if (msg.message?.imageMessage) {
-    return '📷 Imagem';
-  }
-  if (msg.message?.audioMessage) {
-    return '🎵 Áudio';
-  }
-  if (msg.message?.videoMessage) {
-    return '🎥 Vídeo';
-  }
-  if (msg.message?.documentMessage) {
-    return '📎 Documento';
-  }
-  if (msg.message?.stickerMessage) {
-    return '🎨 Sticker';
-  }
+  if (msg.message?.imageMessage) return '📷 Imagem';
+  if (msg.message?.audioMessage) return '🎵 Áudio';
+  if (msg.message?.videoMessage) return '🎥 Vídeo';
+  if (msg.message?.documentMessage) return '📎 Documento';
+  if (msg.message?.stickerMessage) return '🎨 Sticker';
   
-  console.log('❌ Nenhum texto encontrado na mensagem');
   return null;
 }
 
@@ -405,10 +374,18 @@ async function loadMessages(jid) {
     
     let messages = [];
     
-    // Converte o objeto messages em array
+    // CORREÇÃO: Converte o objeto messages em array
     if (data?.messages && typeof data.messages === 'object') {
-      messages = Object.values(data.messages);
-      console.log(`✅ Extraído ${messages.length} mensagens do objeto messages`);
+      // Pega os valores do objeto e filtra apenas objetos válidos
+      const msgValues = Object.values(data.messages);
+      // Filtra apenas itens que são objetos (não números)
+      messages = msgValues.filter(item => item !== null && typeof item === 'object' && !Array.isArray(item));
+      console.log(`✅ Extraído ${messages.length} mensagens do objeto messages (filtradas)`);
+      
+      // Log da primeira mensagem para debug
+      if (messages.length > 0) {
+        console.log('📝 Primeira mensagem:', messages[0]);
+      }
     } else if (Array.isArray(data)) {
       messages = data;
       console.log(`✅ Array direto com ${messages.length} mensagens`);
@@ -448,11 +425,19 @@ function renderMessages(messages) {
   let html = '';
   let textCount = 0;
   
-  for (const msg of messages) {
+  for (let i = 0; i < messages.length; i++) {
+    const msg = messages[i];
+    
+    // Pula se não for um objeto válido
+    if (!msg || typeof msg !== 'object') {
+      console.log(`⚠️ Pulando item inválido:`, msg);
+      continue;
+    }
+    
     const isFromMe = msg.key?.fromMe === true || msg.fromMe === true;
     const direction = isFromMe ? 'out' : 'in';
     
-    // Usa a função melhorada para extrair texto
+    // Extrai o texto
     const text = extractMessageText(msg);
     
     if (text) {
