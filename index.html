@@ -164,19 +164,13 @@ async function apiRequest(endpoint, method = 'POST', body = null) {
 }
 
 function extractRealNumber(chat) {
-  // Prioridade 1: remoteJidAlt (tem o número real)
   if (chat.lastMessage?.key?.remoteJidAlt) {
-    const altJid = chat.lastMessage.key.remoteJidAlt;
-    return altJid.split('@')[0];
+    return chat.lastMessage.key.remoteJidAlt.split('@')[0];
   }
-  
-  // Prioridade 2: se o remoteJid for @c.us ou @s.whatsapp.net
   const remoteJid = chat.remoteJid || chat.id || chat.jid;
   if (remoteJid && (remoteJid.includes('@c.us') || remoteJid.includes('@s.whatsapp.net'))) {
     return remoteJid.split('@')[0];
   }
-  
-  // Prioridade 3: retorna o LID (último recurso)
   return remoteJid?.split('@')[0] || '';
 }
 
@@ -184,7 +178,6 @@ function getContactName(chat) {
   if (chat.pushName && chat.pushName !== 'null' && chat.pushName) return chat.pushName;
   if (chat.name && chat.name !== 'null') return chat.name;
   if (chat.senderName) return chat.senderName;
-  
   const number = extractRealNumber(chat);
   if (number && number.length >= 10) {
     return formatPhoneNumber(number);
@@ -192,7 +185,74 @@ function getContactName(chat) {
   return 'Contato WhatsApp';
 }
 
-// CARREGAR CHATS
+// Função para extrair texto da mensagem - CORRIGIDA
+function extractMessageText(msg) {
+  console.log('🔍 Analisando mensagem:', msg);
+  
+  // Tenta diferentes formatos que a Evolution API pode retornar
+  
+  // Formato 1: message.conversation
+  if (msg.message?.conversation) {
+    console.log('✅ Texto encontrado em message.conversation:', msg.message.conversation);
+    return msg.message.conversation;
+  }
+  
+  // Formato 2: message.extendedTextMessage.text
+  if (msg.message?.extendedTextMessage?.text) {
+    console.log('✅ Texto encontrado em message.extendedTextMessage.text:', msg.message.extendedTextMessage.text);
+    return msg.message.extendedTextMessage.text;
+  }
+  
+  // Formato 3: text direto
+  if (msg.text) {
+    console.log('✅ Texto encontrado em text:', msg.text);
+    return msg.text;
+  }
+  
+  // Formato 4: body
+  if (msg.body) {
+    console.log('✅ Texto encontrado em body:', msg.body);
+    return msg.body;
+  }
+  
+  // Formato 5: content
+  if (msg.content) {
+    console.log('✅ Texto encontrado em content:', msg.content);
+    return msg.content;
+  }
+  
+  // Formato 6: message diretamente como string
+  if (typeof msg.message === 'string') {
+    console.log('✅ Texto encontrado em message (string):', msg.message);
+    return msg.message;
+  }
+  
+  // Formato 7: key.remoteJid (não é texto, mas útil para debug)
+  if (msg.key?.remoteJid) {
+    console.log('⚠️ Mensagem sem texto, apenas metadados:', msg.key);
+  }
+  
+  // Mensagens de mídia
+  if (msg.message?.imageMessage) {
+    return '📷 Imagem';
+  }
+  if (msg.message?.audioMessage) {
+    return '🎵 Áudio';
+  }
+  if (msg.message?.videoMessage) {
+    return '🎥 Vídeo';
+  }
+  if (msg.message?.documentMessage) {
+    return '📎 Documento';
+  }
+  if (msg.message?.stickerMessage) {
+    return '🎨 Sticker';
+  }
+  
+  console.log('❌ Nenhum texto encontrado na mensagem');
+  return null;
+}
+
 async function loadChats() {
   try {
     console.log('🚀 Carregando chats...');
@@ -204,8 +264,6 @@ async function loadChats() {
     else if (data?.records) rawChats = data.records;
     else if (data?.chats) rawChats = data.chats;
     
-    console.log(`📦 ${rawChats.length} chats encontrados`);
-    
     chats = rawChats.map(chat => {
       const realNumber = extractRealNumber(chat);
       const displayName = getContactName(chat);
@@ -215,12 +273,10 @@ async function loadChats() {
         jid: remoteJid,
         number: realNumber,
         name: displayName,
-        isBot: displayName === 'BOT',
         raw: chat
       };
     });
     
-    // Remove duplicatas
     const unique = new Map();
     chats.forEach(c => { 
       if (c.number && !unique.has(c.number)) unique.set(c.number, c);
@@ -309,25 +365,18 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
-// SELECIONAR CHAT
 async function selectChat(jid) {
   console.log(`🔍 Selecionando chat: ${jid}`);
   const chat = chats.find(c => c.jid === jid);
-  if (!chat) {
-    console.error('Chat não encontrado');
-    return;
-  }
+  if (!chat) return;
   
   currentChat = chat;
   const formattedNumber = formatPhoneNumber(chat.number);
   
-  // Atualizar header
   document.getElementById('chatHeader').style.display = 'flex';
   document.getElementById('inputArea').style.display = 'flex';
   document.getElementById('chatName').textContent = chat.name;
   document.getElementById('chatNumber').textContent = formattedNumber;
-  
-  // Atualizar painel direito
   document.getElementById('detailName').textContent = chat.name;
   document.getElementById('detailNumber').textContent = formattedNumber;
   document.getElementById('detailJid').textContent = chat.jid;
@@ -337,13 +386,11 @@ async function selectChat(jid) {
   document.getElementById('headerAvatar').style.background = bgColor;
   document.getElementById('headerAvatar').textContent = chat.name.substring(0,2).toUpperCase();
   
-  // Carregar mensagens
   document.getElementById('messagesArea').innerHTML = '<div class="loading"><div class="spin"></div><br>Carregando mensagens...</div>';
   await loadMessages(chat.jid);
   renderChatList();
 }
 
-// CARREGAR MENSAGENS - CORRIGIDO!
 async function loadMessages(jid) {
   try {
     console.log(`📨 Buscando mensagens para JID: ${jid}`);
@@ -351,54 +398,31 @@ async function loadMessages(jid) {
     
     const data = await apiRequest(`/chat/findMessages/${encoded}`, 'POST', {
       where: { remoteJid: jid },
-      limit: 100,
-      order: [['createdAt', 'DESC']]
+      limit: 100
     });
     
     console.log('📦 Resposta da API:', data);
     
     let messages = [];
     
-    // CORREÇÃO PRINCIPAL: O data.messages é um OBJETO, não um array
+    // Converte o objeto messages em array
     if (data?.messages && typeof data.messages === 'object') {
-      // Converte o objeto messages em array
       messages = Object.values(data.messages);
       console.log(`✅ Extraído ${messages.length} mensagens do objeto messages`);
-    } 
-    // Se for array direto
-    else if (Array.isArray(data)) {
+    } else if (Array.isArray(data)) {
       messages = data;
       console.log(`✅ Array direto com ${messages.length} mensagens`);
-    }
-    // Se tiver records
-    else if (data?.records && Array.isArray(data.records)) {
+    } else if (data?.records && Array.isArray(data.records)) {
       messages = data.records;
       console.log(`✅ data.records com ${messages.length} mensagens`);
     }
-    // Se tiver data
-    else if (data?.data && Array.isArray(data.data)) {
-      messages = data.data;
-      console.log(`✅ data.data com ${messages.length} mensagens`);
-    }
-    else {
-      console.warn('⚠️ Formato não reconhecido, tentando extrair qualquer array...');
-      // Tenta encontrar qualquer array na resposta
-      for (let key in data) {
-        if (Array.isArray(data[key])) {
-          messages = data[key];
-          console.log(`✅ Encontrado array em "${key}" com ${messages.length} mensagens`);
-          break;
-        }
-      }
-    }
     
     if (!messages || messages.length === 0) {
-      console.log('ℹ️ Nenhuma mensagem encontrada para este chat');
       document.getElementById('messagesArea').innerHTML = '<div class="empty-state">💬 Nenhuma mensagem ainda<br>Envie algo para começar!</div>';
       return;
     }
     
-    // Ordena por timestamp (mais antigo primeiro para exibição)
+    // Ordena por timestamp
     messages.sort((a, b) => {
       const timeA = a.messageTimestamp || a.timestamp || 0;
       const timeB = b.messageTimestamp || b.timestamp || 0;
@@ -410,7 +434,6 @@ async function loadMessages(jid) {
   } catch (err) {
     console.error('❌ Erro ao carregar mensagens:', err);
     document.getElementById('messagesArea').innerHTML = `<div class="empty-state">❌ Erro ao carregar mensagens<br><small>${err.message}</small></div>`;
-    showToast(`Erro: ${err.message}`);
   }
 }
 
@@ -423,45 +446,31 @@ function renderMessages(messages) {
   }
   
   let html = '';
+  let textCount = 0;
   
   for (const msg of messages) {
-    // Determina se a mensagem foi enviada por mim
     const isFromMe = msg.key?.fromMe === true || msg.fromMe === true;
     const direction = isFromMe ? 'out' : 'in';
     
-    // Extrai o texto da mensagem
-    let text = '';
+    // Usa a função melhorada para extrair texto
+    const text = extractMessageText(msg);
     
-    if (msg.message) {
-      text = msg.message.conversation || 
-             msg.message.extendedTextMessage?.text || 
-             msg.message.imageMessage?.caption ||
-             (msg.message.imageMessage ? '📷 Imagem' : 
-              msg.message.audioMessage ? '🎵 Áudio' : 
-              msg.message.videoMessage ? '🎥 Vídeo' : 
-              msg.message.documentMessage ? '📎 Documento' : '');
-    } 
-    
-    if (!text && msg.text) text = msg.text;
-    if (!text && msg.body) text = msg.body;
-    if (!text && msg.content) text = msg.content;
-    
-    if (text && text !== '') {
+    if (text) {
       html += `<div class="message ${direction}">${escapeHtml(text)}</div>`;
+      textCount++;
     }
   }
   
+  console.log(`✅ ${textCount} mensagens de texto exibidas (total ${messages.length})`);
+  
   if (html === '') {
-    container.innerHTML = '<div class="empty-state">📎 Apenas mensagens de mídia<br>Nenhum texto para exibir</div>';
+    container.innerHTML = '<div class="empty-state">📎 Mensagens de mídia<br>Nenhum texto para exibir</div>';
   } else {
     container.innerHTML = html;
     container.scrollTop = container.scrollHeight;
   }
-  
-  console.log(`✅ Renderizadas ${messages.length} mensagens, ${html.split('message').length - 1} exibidas`);
 }
 
-// ENVIAR MENSAGEM
 async function sendMessage() {
   if (!currentChat) {
     showToast('Selecione uma conversa primeiro');
@@ -485,7 +494,6 @@ async function sendMessage() {
     input.value = '';
     showToast('Mensagem enviada! ✅');
     
-    // Adiciona mensagem temporariamente na tela
     const container = document.getElementById('messagesArea');
     if (container.innerHTML.includes('Nenhuma mensagem')) {
       container.innerHTML = '';
@@ -493,7 +501,6 @@ async function sendMessage() {
     container.innerHTML += `<div class="message out">${escapeHtml(text)}</div>`;
     container.scrollTop = container.scrollHeight;
     
-    // Recarrega mensagens para confirmar
     setTimeout(() => {
       if (currentChat) loadMessages(currentChat.jid);
     }, 2000);
@@ -527,8 +534,6 @@ function setTab(tab, btn) {
 
 // INICIAR
 loadChats();
-
-// Auto-refresh a cada 15 segundos
 setInterval(() => { 
   loadChats(); 
   if (currentChat) loadMessages(currentChat.jid); 
