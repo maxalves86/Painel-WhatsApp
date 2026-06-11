@@ -185,43 +185,6 @@ function getContactName(chat) {
   return 'Contato WhatsApp';
 }
 
-// Função CORRIGIDA para extrair texto da mensagem
-function extractMessageText(msg) {
-  // Se for número/índice, não é mensagem válida
-  if (typeof msg === 'number' || !msg) {
-    return null;
-  }
-  
-  // Tenta diferentes formatos
-  if (msg.message?.conversation) {
-    return msg.message.conversation;
-  }
-  if (msg.message?.extendedTextMessage?.text) {
-    return msg.message.extendedTextMessage.text;
-  }
-  if (msg.text) {
-    return msg.text;
-  }
-  if (msg.body) {
-    return msg.body;
-  }
-  if (msg.content) {
-    return msg.content;
-  }
-  if (typeof msg.message === 'string') {
-    return msg.message;
-  }
-  
-  // Mensagens de mídia
-  if (msg.message?.imageMessage) return '📷 Imagem';
-  if (msg.message?.audioMessage) return '🎵 Áudio';
-  if (msg.message?.videoMessage) return '🎥 Vídeo';
-  if (msg.message?.documentMessage) return '📎 Documento';
-  if (msg.message?.stickerMessage) return '🎨 Sticker';
-  
-  return null;
-}
-
 async function loadChats() {
   try {
     console.log('🚀 Carregando chats...');
@@ -370,47 +333,54 @@ async function loadMessages(jid) {
       limit: 100
     });
     
-    console.log('📦 Resposta da API:', data);
+    console.log('📦 Resposta COMPLETA da API:', JSON.stringify(data, null, 2));
     
     let messages = [];
     
-    // CORREÇÃO: Converte o objeto messages em array
     if (data?.messages && typeof data.messages === 'object') {
-      // Pega os valores do objeto e filtra apenas objetos válidos
-      const msgValues = Object.values(data.messages);
-      // Filtra apenas itens que são objetos (não números)
-      messages = msgValues.filter(item => item !== null && typeof item === 'object' && !Array.isArray(item));
-      console.log(`✅ Extraído ${messages.length} mensagens do objeto messages (filtradas)`);
+      console.log('🔍 data.messages é um objeto. Keys:', Object.keys(data.messages));
       
-      // Log da primeira mensagem para debug
+      // Pega todos os valores
+      const allValues = Object.values(data.messages);
+      console.log(`📊 Total de valores: ${allValues.length}`);
+      
+      // Filtra apenas objetos que parecem mensagens
+      messages = allValues.filter(item => {
+        const isValid = item && typeof item === 'object' && (item.message || item.text || item.body);
+        if (!isValid) {
+          console.log('⚠️ Item filtrado:', item);
+        }
+        return isValid;
+      });
+      
+      console.log(`✅ ${messages.length} mensagens válidas extraídas`);
+      
+      // Mostra a estrutura da primeira mensagem
       if (messages.length > 0) {
-        console.log('📝 Primeira mensagem:', messages[0]);
+        console.log('📝 ESTRUTURA DA PRIMEIRA MENSAGEM:');
+        console.log('- keys:', Object.keys(messages[0]));
+        console.log('- message:', messages[0].message);
+        console.log('- text:', messages[0].text);
+        console.log('- body:', messages[0].body);
+        console.log('- content:', messages[0].content);
+        console.log('- message.conversation:', messages[0].message?.conversation);
+        console.log('- message.extendedTextMessage:', messages[0].message?.extendedTextMessage);
       }
     } else if (Array.isArray(data)) {
       messages = data;
       console.log(`✅ Array direto com ${messages.length} mensagens`);
-    } else if (data?.records && Array.isArray(data.records)) {
-      messages = data.records;
-      console.log(`✅ data.records com ${messages.length} mensagens`);
     }
     
     if (!messages || messages.length === 0) {
-      document.getElementById('messagesArea').innerHTML = '<div class="empty-state">💬 Nenhuma mensagem ainda<br>Envie algo para começar!</div>';
+      document.getElementById('messagesArea').innerHTML = '<div class="empty-state">💬 Nenhuma mensagem encontrada</div>';
       return;
     }
-    
-    // Ordena por timestamp
-    messages.sort((a, b) => {
-      const timeA = a.messageTimestamp || a.timestamp || 0;
-      const timeB = b.messageTimestamp || b.timestamp || 0;
-      return timeA - timeB;
-    });
     
     renderMessages(messages);
     
   } catch (err) {
     console.error('❌ Erro ao carregar mensagens:', err);
-    document.getElementById('messagesArea').innerHTML = `<div class="empty-state">❌ Erro ao carregar mensagens<br><small>${err.message}</small></div>`;
+    document.getElementById('messagesArea').innerHTML = `<div class="empty-state">❌ Erro: ${err.message}</div>`;
   }
 }
 
@@ -418,7 +388,7 @@ function renderMessages(messages) {
   const container = document.getElementById('messagesArea');
   
   if (!messages || messages.length === 0) {
-    container.innerHTML = '<div class="empty-state">💬 Nenhuma mensagem ainda<br>Envie algo para começar!</div>';
+    container.innerHTML = '<div class="empty-state">💬 Nenhuma mensagem</div>';
     return;
   }
   
@@ -428,17 +398,25 @@ function renderMessages(messages) {
   for (let i = 0; i < messages.length; i++) {
     const msg = messages[i];
     
-    // Pula se não for um objeto válido
-    if (!msg || typeof msg !== 'object') {
-      console.log(`⚠️ Pulando item inválido:`, msg);
-      continue;
-    }
-    
     const isFromMe = msg.key?.fromMe === true || msg.fromMe === true;
     const direction = isFromMe ? 'out' : 'in';
     
-    // Extrai o texto
-    const text = extractMessageText(msg);
+    // Tenta extrair texto de várias formas
+    let text = null;
+    
+    if (msg.message?.conversation) {
+      text = msg.message.conversation;
+    } else if (msg.message?.extendedTextMessage?.text) {
+      text = msg.message.extendedTextMessage.text;
+    } else if (msg.text) {
+      text = msg.text;
+    } else if (msg.body) {
+      text = msg.body;
+    } else if (msg.content) {
+      text = msg.content;
+    } else if (msg.message && typeof msg.message === 'string') {
+      text = msg.message;
+    }
     
     if (text) {
       html += `<div class="message ${direction}">${escapeHtml(text)}</div>`;
@@ -446,10 +424,10 @@ function renderMessages(messages) {
     }
   }
   
-  console.log(`✅ ${textCount} mensagens de texto exibidas (total ${messages.length})`);
+  console.log(`✅ ${textCount} mensagens exibidas de ${messages.length} total`);
   
   if (html === '') {
-    container.innerHTML = '<div class="empty-state">📎 Mensagens de mídia<br>Nenhum texto para exibir</div>';
+    container.innerHTML = '<div class="empty-state">📎 Apenas mensagens de mídia</div>';
   } else {
     container.innerHTML = html;
     container.scrollTop = container.scrollHeight;
@@ -466,8 +444,6 @@ async function sendMessage() {
   const text = input.value.trim();
   if (!text) return;
   
-  console.log(`📤 Enviando para ${currentChat.number}: "${text}"`);
-  
   try {
     const encoded = encodeURIComponent(INSTANCE);
     await apiRequest(`/message/sendText/${encoded}`, 'POST', {
@@ -479,19 +455,11 @@ async function sendMessage() {
     input.value = '';
     showToast('Mensagem enviada! ✅');
     
-    const container = document.getElementById('messagesArea');
-    if (container.innerHTML.includes('Nenhuma mensagem')) {
-      container.innerHTML = '';
-    }
-    container.innerHTML += `<div class="message out">${escapeHtml(text)}</div>`;
-    container.scrollTop = container.scrollHeight;
-    
     setTimeout(() => {
       if (currentChat) loadMessages(currentChat.jid);
     }, 2000);
     
   } catch (err) {
-    console.error('❌ Erro ao enviar mensagem:', err);
     showToast(`Erro: ${err.message}`);
   }
 }
@@ -517,7 +485,6 @@ function setTab(tab, btn) {
   renderChatList();
 }
 
-// INICIAR
 loadChats();
 setInterval(() => { 
   loadChats(); 
