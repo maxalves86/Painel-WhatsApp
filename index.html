@@ -163,28 +163,6 @@ async function apiRequest(endpoint, method = 'POST', body = null) {
   }
 }
 
-function extractRealNumber(chat) {
-  if (chat.lastMessage?.key?.remoteJidAlt) {
-    return chat.lastMessage.key.remoteJidAlt.split('@')[0];
-  }
-  const remoteJid = chat.remoteJid || chat.id || chat.jid;
-  if (remoteJid && (remoteJid.includes('@c.us') || remoteJid.includes('@s.whatsapp.net'))) {
-    return remoteJid.split('@')[0];
-  }
-  return remoteJid?.split('@')[0] || '';
-}
-
-function getContactName(chat) {
-  if (chat.pushName && chat.pushName !== 'null' && chat.pushName) return chat.pushName;
-  if (chat.name && chat.name !== 'null') return chat.name;
-  if (chat.senderName) return chat.senderName;
-  const number = extractRealNumber(chat);
-  if (number && number.length >= 10) {
-    return formatPhoneNumber(number);
-  }
-  return 'Contato WhatsApp';
-}
-
 async function loadChats() {
   try {
     console.log('🚀 Carregando chats...');
@@ -197,26 +175,40 @@ async function loadChats() {
     else if (data?.chats) rawChats = data.chats;
     
     chats = rawChats.map(chat => {
-      const realNumber = extractRealNumber(chat);
-      const displayName = getContactName(chat);
+      // Mantém o JID original (que pode ser @lid ou @s.whatsapp.net)
       const remoteJid = chat.remoteJid || chat.id || chat.jid;
       
+      // Extrai o número real para exibição
+      let number = '';
+      if (chat.lastMessage?.key?.remoteJidAlt) {
+        number = chat.lastMessage.key.remoteJidAlt.split('@')[0];
+      } else {
+        number = remoteJid.split('@')[0];
+      }
+      
+      // Nome do contato
+      let name = chat.pushName || chat.name || chat.senderName;
+      if (!name || name === 'null') {
+        name = formatPhoneNumber(number);
+      }
+      
       return {
-        jid: remoteJid,
-        number: realNumber,
-        name: displayName,
+        jid: remoteJid,  // Mantém o JID original da API
+        number: number,
+        name: name,
         raw: chat
       };
     });
     
+    // Remove duplicatas
     const unique = new Map();
     chats.forEach(c => { 
-      if (c.number && !unique.has(c.number)) unique.set(c.number, c);
-      else if (c.jid && !unique.has(c.jid)) unique.set(c.jid, c);
+      if (c.jid && !unique.has(c.jid)) unique.set(c.jid, c);
     });
     chats = Array.from(unique.values());
     
     console.log(`✅ ${chats.length} chats processados`);
+    console.log('📋 Primeiro chat:', chats[0]);
     renderChatList();
     showToast(`${chats.length} conversas carregadas`);
     
@@ -300,7 +292,10 @@ function escapeHtml(text) {
 async function selectChat(jid) {
   console.log(`🔍 Selecionando chat: ${jid}`);
   const chat = chats.find(c => c.jid === jid);
-  if (!chat) return;
+  if (!chat) {
+    console.error('Chat não encontrado!');
+    return;
+  }
   
   currentChat = chat;
   const formattedNumber = formatPhoneNumber(chat.number);
@@ -323,30 +318,25 @@ async function selectChat(jid) {
   renderChatList();
 }
 
-// FUNÇÃO CORRIGIDA - Vai extrair texto de QUALQUER lugar
-function extractAnyText(obj, depth = 0) {
-  if (depth > 5) return null;
+// Função para extrair texto de qualquer lugar
+function extractMessageText(obj) {
   if (!obj) return null;
   if (typeof obj === 'string') return obj;
-  if (typeof obj === 'number') return String(obj);
   
-  // Lista de campos comuns que podem conter texto
-  const textFields = ['text', 'body', 'content', 'conversation', 'message', 'caption', 'description'];
+  // Campos comuns de texto
+  const fields = ['text', 'body', 'content', 'conversation', 'message', 'caption', 'description'];
   
-  for (const field of textFields) {
+  for (const field of fields) {
     if (obj[field] && typeof obj[field] === 'string' && obj[field].length > 0) {
       return obj[field];
     }
   }
   
-  // Procura recursivamente
-  if (typeof obj === 'object') {
-    for (const key in obj) {
-      if (obj[key] && typeof obj[key] === 'object') {
-        const found = extractAnyText(obj[key], depth + 1);
-        if (found) return found;
-      }
-    }
+  // Procura dentro de message
+  if (obj.message) {
+    if (typeof obj.message === 'string') return obj.message;
+    if (obj.message.conversation) return obj.message.conversation;
+    if (obj.message.extendedTextMessage?.text) return obj.message.extendedTextMessage.text;
   }
   
   return null;
@@ -362,30 +352,37 @@ async function loadMessages(jid) {
       limit: 100
     });
     
+    console.log('📦 Resposta recebida:', data);
+    
     let messages = [];
     
-    // Extrai mensagens de diferentes formatos
-    if (data?.messages) {
-      if (typeof data.messages === 'object') {
-        // Pega todos os valores que são objetos (mensagens)
+    // Tenta extrair mensagens do formato correto
+    if (data && typeof data === 'object') {
+      // Se tem messages e é objeto
+      if (data.messages && typeof data.messages === 'object') {
         const values = Object.values(data.messages);
-        messages = values.filter(v => v && typeof v === 'object' && !Array.isArray(v));
-        console.log(`📊 Extraídas ${messages.length} mensagens do objeto messages`);
-      } else if (Array.isArray(data.messages)) {
-        messages = data.messages;
+        messages = values.filter(v => v && typeof v === 'object');
+        console.log(`✅ Extraídas ${messages.length} mensagens de data.messages`);
       }
-    } else if (Array.isArray(data)) {
-      messages = data;
+      // Se é um array direto
+      else if (Array.isArray(data)) {
+        messages = data;
+        console.log(`✅ Array direto com ${messages.length} mensagens`);
+      }
+      // Se tem records
+      else if (data.records && Array.isArray(data.records)) {
+        messages = data.records;
+        console.log(`✅ data.records com ${messages.length} mensagens`);
+      }
     }
     
     if (messages.length === 0) {
+      console.log('ℹ️ Nenhuma mensagem encontrada');
       document.getElementById('messagesArea').innerHTML = '<div class="empty-state">💬 Nenhuma mensagem encontrada</div>';
       return;
     }
     
-    console.log(`✅ ${messages.length} mensagens para processar`);
-    
-    // Mostra a primeira mensagem para debug
+    // Mostra exemplo da primeira mensagem
     if (messages[0]) {
       console.log('📝 Exemplo de mensagem:', JSON.stringify(messages[0], null, 2));
     }
@@ -393,7 +390,7 @@ async function loadMessages(jid) {
     renderMessages(messages);
     
   } catch (err) {
-    console.error('❌ Erro:', err);
+    console.error('❌ Erro ao carregar mensagens:', err);
     document.getElementById('messagesArea').innerHTML = `<div class="empty-state">❌ Erro: ${err.message}</div>`;
   }
 }
@@ -407,41 +404,37 @@ function renderMessages(messages) {
   }
   
   let html = '';
-  let msgCount = 0;
+  let count = 0;
   
   for (const msg of messages) {
-    // Verifica se a mensagem é válida
+    // Verifica se é uma mensagem válida
     if (!msg || typeof msg !== 'object') continue;
     
-    // Determina quem enviou
-    const isFromMe = msg.key?.fromMe === true || msg.fromMe === true || msg.status === 'SERVER_ACK';
+    // Determina quem enviou (prioriza diferentes formatos)
+    const isFromMe = msg.key?.fromMe === true || msg.fromMe === true || msg.remoteJid === 'status@broadcast';
     const direction = isFromMe ? 'out' : 'in';
     
-    // Extrai texto usando a função robusta
-    let text = extractAnyText(msg);
+    // Extrai o texto
+    let text = extractMessageText(msg);
     
-    // Se não encontrou texto, verifica se é mídia
+    // Se não tem texto, verifica se é mídia
     if (!text) {
       if (msg.message?.imageMessage) text = '📷 Imagem';
       else if (msg.message?.audioMessage) text = '🎵 Áudio';
       else if (msg.message?.videoMessage) text = '🎥 Vídeo';
       else if (msg.message?.documentMessage) text = '📎 Documento';
-      else if (msg.message?.stickerMessage) text = '🎨 Sticker';
-      else if (msg.message?.locationMessage) text = '📍 Localização';
-      else if (msg.message?.contactMessage) text = '👤 Contato';
-      else text = null;
     }
     
-    if (text) {
+    if (text && text.length > 0) {
       html += `<div class="message ${direction}">${escapeHtml(text)}</div>`;
-      msgCount++;
+      count++;
     }
   }
   
-  console.log(`✅ ${msgCount} mensagens exibidas de ${messages.length} total`);
+  console.log(`✅ ${count} mensagens exibidas de ${messages.length}`);
   
   if (html === '') {
-    container.innerHTML = '<div class="empty-state">📎 Apenas mensagens de mídia<br>Nenhum texto encontrado</div>';
+    container.innerHTML = '<div class="empty-state">📎 Nenhuma mensagem de texto encontrada</div>';
   } else {
     container.innerHTML = html;
     container.scrollTop = container.scrollHeight;
@@ -458,6 +451,8 @@ async function sendMessage() {
   const text = input.value.trim();
   if (!text) return;
   
+  console.log(`📤 Enviando para ${currentChat.number} (JID: ${currentChat.jid})`);
+  
   try {
     const encoded = encodeURIComponent(INSTANCE);
     await apiRequest(`/message/sendText/${encoded}`, 'POST', {
@@ -469,20 +464,13 @@ async function sendMessage() {
     input.value = '';
     showToast('Mensagem enviada! ✅');
     
-    // Adiciona mensagem temporariamente
-    const container = document.getElementById('messagesArea');
-    if (container.innerHTML.includes('Nenhuma mensagem')) {
-      container.innerHTML = '';
-    }
-    container.innerHTML += `<div class="message out">${escapeHtml(text)}</div>`;
-    container.scrollTop = container.scrollHeight;
-    
-    // Recarrega mensagens reais
+    // Recarrega mensagens
     setTimeout(() => {
       if (currentChat) loadMessages(currentChat.jid);
     }, 2000);
     
   } catch (err) {
+    console.error('❌ Erro:', err);
     showToast(`Erro: ${err.message}`);
   }
 }
@@ -508,7 +496,10 @@ function setTab(tab, btn) {
   renderChatList();
 }
 
+// Inicializa
 loadChats();
+
+// Auto-refresh
 setInterval(() => { 
   loadChats(); 
   if (currentChat) loadMessages(currentChat.jid); 
