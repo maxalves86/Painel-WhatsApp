@@ -45,19 +45,18 @@ body{font-family:'Segoe UI',sans-serif;background:#f0f2f5;height:100vh;overflow:
 .message-media{max-width:70%;margin:4px 0}
 .message-media.out{align-self:flex-end}
 .message-media.in{align-self:flex-start}
-.message-media img{max-width:100%;border-radius:12px;cursor:pointer}
-.message-media audio{width:200px;border-radius:12px}
+.message-media img{max-width:100%;border-radius:12px;cursor:pointer;max-height:300px}
+.message-media audio{width:250px;border-radius:12px}
 .message-media video{max-width:100%;border-radius:12px}
 .input-area{padding:12px;background:#fff;border-top:1px solid #e0e0e0}
-.input-tools{display:flex;gap:8px;margin-bottom:8px}
-.tool-btn{background:none;border:none;cursor:pointer;padding:6px;border-radius:8px;font-size:18px}
+.input-tools{display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+.tool-btn{background:none;border:none;cursor:pointer;padding:6px 10px;border-radius:8px;font-size:14px;display:flex;align-items:center;gap:4px}
 .tool-btn:hover{background:#f0f0f0}
 .input-row{display:flex;gap:8px}
 .input-row textarea{flex:1;padding:10px;border:1px solid #ddd;border-radius:20px;resize:none;font-family:inherit;font-size:14px}
 .input-row button{background:#075e54;color:#fff;border:none;border-radius:20px;padding:0 20px;cursor:pointer}
 .file-input{display:none}
-.preview-area{padding:8px;background:#f5f5f5;border-radius:8px;margin-top:8px;display:flex;align-items:center;gap:8px}
-.preview-area img{max-height:60px;border-radius:8px}
+.preview-area{padding:8px;background:#f5f5f5;border-radius:8px;margin-top:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .right-panel{width:300px;background:#fff;border-left:1px solid #e0e0e0;padding:16px;overflow-y:auto;flex-shrink:0}
 .right-panel h4{font-size:14px;margin-bottom:12px;color:#666}
 .detail-row{margin-bottom:12px}
@@ -66,7 +65,6 @@ body{font-family:'Segoe UI',sans-serif;background:#f0f2f5;height:100vh;overflow:
 .empty-state{display:flex;flex:1;align-items:center;justify-content:center;color:#999;flex-direction:column;gap:12px}
 .loading{padding:20px;text-align:center;color:#999}
 .spin{display:inline-block;width:20px;height:20px;border:2px solid #ddd;border-top-color:#075e54;border-radius:50%;animation:spin 0.8s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
 .toast{position:fixed;bottom:20px;right:20px;background:#333;color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;z-index:1000;opacity:0;transition:opacity 0.3s}
 .toast.show{opacity:1}
 </style>
@@ -112,6 +110,7 @@ body{font-family:'Segoe UI',sans-serif;background:#f0f2f5;height:100vh;overflow:
       <div class="input-tools">
         <button class="tool-btn" onclick="document.getElementById('imageInput').click()">📷 Imagem</button>
         <button class="tool-btn" onclick="document.getElementById('audioInput').click()">🎵 Áudio</button>
+        <button class="tool-btn" onclick="document.getElementById('docInput').click()">📎 Documento</button>
       </div>
       <div class="input-row">
         <textarea id="messageInput" placeholder="Digite sua mensagem..." rows="2" onkeydown="if(event.key=='Enter'&&!event.shiftKey){event.preventDefault();sendTextMessage()}"></textarea>
@@ -119,8 +118,9 @@ body{font-family:'Segoe UI',sans-serif;background:#f0f2f5;height:100vh;overflow:
       </div>
       <div id="previewArea" class="preview-area" style="display:none"></div>
     </div>
-    <input type="file" id="imageInput" accept="image/*" style="display:none" onchange="sendImage(this)">
-    <input type="file" id="audioInput" accept="audio/*" style="display:none" onchange="sendAudio(this)">
+    <input type="file" id="imageInput" accept="image/*" style="display:none" onchange="sendMedia(this, 'image')">
+    <input type="file" id="audioInput" accept="audio/*" style="display:none" onchange="sendMedia(this, 'audio')">
+    <input type="file" id="docInput" accept=".pdf,.doc,.docx,.txt,.xls,.xlsx" style="display:none" onchange="sendMedia(this, 'document')">
   </div>
 
   <div class="right-panel">
@@ -130,11 +130,11 @@ body{font-family:'Segoe UI',sans-serif;background:#f0f2f5;height:100vh;overflow:
       <div class="detail-value" id="detailName">-</div>
     </div>
     <div class="detail-row">
-      <div class="detail-label">Número WhatsApp</div>
+      <div class="detail-label">Número</div>
       <div class="detail-value" id="detailNumber" style="color:#075e54;font-weight:bold">-</div>
     </div>
     <div class="detail-row">
-      <div class="detail-label">ID da Conversa</div>
+      <div class="detail-label">ID da Conversa (LID)</div>
       <div class="detail-value" id="detailJid" style="font-size:10px">-</div>
     </div>
   </div>
@@ -187,31 +187,41 @@ async function loadChats() {
     else if (data?.records) rawChats = data.records;
     else if (data?.chats) rawChats = data.chats;
     
-    const uniqueByNumber = new Map();
+    // Mapa para garantir que cada conversa seja única pelo remoteJid ORIGINAL
+    const uniqueChats = new Map();
     
     rawChats.forEach(chat => {
-      let number = '';
+      // IMPORTANTE: Usamos o remoteJid ORIGINAL da API (pode ser @lid ou @s.whatsapp.net)
+      const remoteJid = chat.remoteJid || chat.id || chat.jid;
+      if (!remoteJid) return;
+      
+      // Extrai o número de telefone para exibição (do remoteJidAlt se disponível)
+      let displayNumber = '';
       if (chat.lastMessage?.key?.remoteJidAlt) {
-        number = chat.lastMessage.key.remoteJidAlt.split('@')[0];
+        displayNumber = chat.lastMessage.key.remoteJidAlt.split('@')[0];
       } else {
-        const remoteJid = chat.remoteJid || chat.id || chat.jid;
-        number = remoteJid.split('@')[0];
+        displayNumber = remoteJid.split('@')[0];
       }
+      displayNumber = displayNumber.replace(/\D/g, '');
       
+      // Nome do contato
       let name = chat.pushName || chat.name || chat.senderName;
-      if (!name || name === 'null') {
-        name = formatPhoneNumber(number);
+      if (!name || name === 'null' || name === displayNumber) {
+        name = formatPhoneNumber(displayNumber);
       }
       
-      if (!uniqueByNumber.has(number)) {
-        uniqueByNumber.set(number, {
-          number: number,
+      // Usa o remoteJid como chave única (isso resolve o problema de misturar conversas)
+      if (!uniqueChats.has(remoteJid)) {
+        uniqueChats.set(remoteJid, {
+          id: remoteJid,           // JID original da conversa (@lid ou @s.whatsapp.net)
+          number: displayNumber,   // Número para exibição
           name: name
         });
       }
     });
     
-    chats = Array.from(uniqueByNumber.values());
+    chats = Array.from(uniqueChats.values());
+    console.log('✅ Chats carregados:', chats);
     renderChatList();
     showToast(`${chats.length} conversas carregadas`);
   } catch (err) {
@@ -222,8 +232,11 @@ async function loadChats() {
 function formatPhoneNumber(num) {
   if (!num) return '';
   const clean = num.replace(/\D/g, '');
-  if (clean.length === 11) {
-    return `+55 ${clean.slice(0,2)} ${clean.slice(2,7)} ${clean.slice(7)}`;
+  if (clean.length === 11 && clean.startsWith('55')) {
+    return `+55 (${clean.slice(2,4)}) ${clean.slice(4,9)}-${clean.slice(9)}`;
+  }
+  if (clean.length === 13 && clean.startsWith('55')) {
+    return `+55 (${clean.slice(2,4)}) ${clean.slice(4,9)}-${clean.slice(9,13)}`;
   }
   return clean;
 }
@@ -233,7 +246,7 @@ function renderChatList() {
   let filtered = chats.filter(chat => {
     if (currentFilter && !chat.name.toLowerCase().includes(currentFilter.toLowerCase()) && 
         !chat.number.includes(currentFilter)) return false;
-    const status = statusMap[chat.number] || 'pendente';
+    const status = statusMap[chat.id] || 'pendente';
     if (currentTab !== 'all' && status !== currentTab) return false;
     return true;
   });
@@ -245,17 +258,17 @@ function renderChatList() {
   
   let html = '';
   filtered.forEach(chat => {
-    const status = statusMap[chat.number] || 'pendente';
+    const status = statusMap[chat.id] || 'pendente';
     let statusClass = 'badge-pendente', statusText = 'Pendente';
     if (status === 'em_atendimento') { statusClass = 'badge-ativo'; statusText = 'Ativo'; }
     if (status === 'finalizado') { statusClass = 'badge-finalizado'; statusText = 'Finalizado'; }
     
-    const bgColor = getAvatarColor(chat.number);
-    const isActive = currentChat?.number === chat.number;
+    const bgColor = getAvatarColor(chat.id);
+    const isActive = currentChat?.id === chat.id;
     const formattedNumber = formatPhoneNumber(chat.number);
     
     html += `
-      <div class="conv-item ${isActive ? 'active' : ''}" onclick="selectChat('${chat.number}')">
+      <div class="conv-item ${isActive ? 'active' : ''}" onclick="selectChat('${chat.id.replace(/'/g, "\\'")}')">
         <div class="avatar" style="background:${bgColor}">${chat.name.substring(0,2).toUpperCase()}</div>
         <div class="conv-info">
           <div class="conv-name">${escapeHtml(chat.name)}</div>
@@ -284,8 +297,9 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
-async function selectChat(number) {
-  const chat = chats.find(c => c.number === number);
+async function selectChat(chatId) {
+  console.log(`🔍 Selecionando chat com ID: ${chatId}`);
+  const chat = chats.find(c => c.id === chatId);
   if (!chat) return;
   
   currentChat = chat;
@@ -297,95 +311,78 @@ async function selectChat(number) {
   document.getElementById('chatNumber').textContent = formattedNumber;
   document.getElementById('detailName').textContent = chat.name;
   document.getElementById('detailNumber').textContent = formattedNumber;
-  document.getElementById('detailJid').textContent = `${number}@s.whatsapp.net`;
+  document.getElementById('detailJid').textContent = chat.id;
   
-  const bgColor = getAvatarColor(chat.number);
+  const bgColor = getAvatarColor(chat.id);
   document.getElementById('headerAvatar').style.background = bgColor;
   document.getElementById('headerAvatar').textContent = chat.name.substring(0,2).toUpperCase();
   
   document.getElementById('messagesArea').innerHTML = '<div class="loading"><div class="spin"></div><br>Carregando mensagens...</div>';
-  await loadMessages(number);
+  await loadMessages(chat.id);
   renderChatList();
 }
 
-// Função para extrair e exibir qualquer tipo de mensagem
 function renderMessage(msg) {
   if (!msg || typeof msg !== 'object') return null;
   
   const isFromMe = msg.key?.fromMe === true || msg.fromMe === true;
   const direction = isFromMe ? 'out' : 'in';
+  const timestamp = msg.messageTimestamp ? new Date(msg.messageTimestamp * 1000).toLocaleTimeString() : '';
   
-  // Mensagem de texto
+  // TEXTO
   let text = msg.message?.conversation || 
              msg.message?.extendedTextMessage?.text || 
              msg.text || msg.body || msg.content;
   
   if (text) {
-    return `<div class="message ${direction}">${escapeHtml(text)}</div>`;
+    return `<div class="message ${direction}">${escapeHtml(text)}<div style="font-size:9px;color:#999;margin-top:4px">${timestamp}</div></div>`;
   }
   
-  // Mensagem de imagem
+  // IMAGEM
   if (msg.message?.imageMessage) {
     const caption = msg.message.imageMessage.caption || '';
     const url = msg.message.imageMessage.url || '';
     return `
       <div class="message-media ${direction}">
         ${caption ? `<div class="message ${direction}" style="margin-bottom:4px">${escapeHtml(caption)}</div>` : ''}
-        ${url ? `<img src="${url}" alt="Imagem" style="max-width:100%;border-radius:12px" onclick="window.open('${url}')">` : '📷 Imagem'}
+        ${url ? `<img src="${url}" alt="Imagem" onclick="window.open('${url}')">` : '📷 Imagem'}
+        <div style="font-size:9px;color:#999;margin-top:4px">${timestamp}</div>
       </div>
     `;
   }
   
-  // Mensagem de áudio
+  // ÁUDIO
   if (msg.message?.audioMessage) {
     const url = msg.message.audioMessage.url || '';
     return `
       <div class="message-media ${direction}">
         <audio controls src="${url}"></audio>
+        <div style="font-size:9px;color:#999;margin-top:4px">${timestamp}</div>
       </div>
     `;
   }
   
-  // Mensagem de vídeo
-  if (msg.message?.videoMessage) {
-    const url = msg.message.videoMessage.url || '';
-    return `
-      <div class="message-media ${direction}">
-        <video controls src="${url}" style="max-width:100%;border-radius:12px"></video>
-      </div>
-    `;
-  }
-  
-  // Documento
+  // DOCUMENTO
   if (msg.message?.documentMessage) {
     const fileName = msg.message.documentMessage.fileName || 'Documento';
-    return `<div class="message ${direction}">📎 ${escapeHtml(fileName)}</div>`;
-  }
-  
-  // Sticker
-  if (msg.message?.stickerMessage) {
-    return `<div class="message ${direction}">🎨 Sticker</div>`;
-  }
-  
-  // Localização
-  if (msg.message?.locationMessage) {
-    return `<div class="message ${direction}">📍 Localização</div>`;
-  }
-  
-  // Contato
-  if (msg.message?.contactMessage) {
-    const name = msg.message.contactMessage.displayName || 'Contato';
-    return `<div class="message ${direction}">👤 ${escapeHtml(name)}</div>`;
+    const url = msg.message.documentMessage.url || '';
+    return `
+      <div class="message ${direction}">
+        📎 <a href="${url}" target="_blank">${escapeHtml(fileName)}</a>
+        <div style="font-size:9px;color:#999;margin-top:4px">${timestamp}</div>
+      </div>
+    `;
   }
   
   return null;
 }
 
-async function loadMessages(number) {
+async function loadMessages(chatId) {
   try {
     const encoded = encodeURIComponent(INSTANCE);
+    // Busca mensagens usando o chatId (que pode ser @lid ou @s.whatsapp.net)
     const data = await apiRequest(`/chat/findMessages/${encoded}`, 'POST', {
-      where: { remoteJid: `${number}@s.whatsapp.net` },
+      where: { remoteJid: chatId },
       limit: 100
     });
     
@@ -415,10 +412,10 @@ async function loadMessages(number) {
     
   } catch (err) {
     console.error('❌ Erro:', err);
+    document.getElementById('messagesArea').innerHTML = `<div class="empty-state">❌ Erro ao carregar mensagens</div>`;
   }
 }
 
-// ENVIAR MENSAGEM DE TEXTO
 async function sendTextMessage() {
   if (!currentChat) {
     showToast('Selecione uma conversa primeiro');
@@ -440,91 +437,65 @@ async function sendTextMessage() {
     input.value = '';
     showToast('Mensagem enviada! ✅');
     
-    // Adiciona na tela imediatamente
+    const timestamp = new Date().toLocaleTimeString();
     const container = document.getElementById('messagesArea');
     if (container.innerHTML.includes('Nenhuma mensagem')) container.innerHTML = '';
-    container.innerHTML += `<div class="message out">${escapeHtml(text)}</div>`;
+    container.innerHTML += `<div class="message out">${escapeHtml(text)}<div style="font-size:9px;color:#999;margin-top:4px">${timestamp}</div></div>`;
     container.scrollTop = container.scrollHeight;
     
-    setTimeout(() => loadMessages(currentChat.number), 2000);
+    setTimeout(() => loadMessages(currentChat.id), 2000);
   } catch (err) {
     showToast(`Erro: ${err.message}`);
   }
 }
 
-// ENVIAR IMAGEM
-async function sendImage(input) {
+async function sendMedia(input, type) {
   if (!currentChat) {
     showToast('Selecione uma conversa primeiro');
+    input.value = '';
     return;
   }
   
   const file = input.files[0];
   if (!file) return;
   
-  showToast('Enviando imagem...');
+  showToast(`Enviando ${type}...`);
   
   try {
-    // Converter imagem para base64
     const reader = new FileReader();
     reader.onloadend = async function() {
       const base64 = reader.result.split(',')[1];
-      
       const encoded = encodeURIComponent(INSTANCE);
-      await apiRequest(`/message/sendMedia/${encoded}`, 'POST', {
+      
+      let endpoint = `/message/sendMedia/${encoded}`;
+      let body = {
         number: currentChat.number,
         media: base64,
         mimetype: file.type,
         fileName: file.name,
         caption: ''
-      });
+      };
       
-      showToast('Imagem enviada! ✅');
+      if (type === 'audio') {
+        endpoint = `/message/sendWhatsAppAudio/${encoded}`;
+        body = { number: currentChat.number, audio: base64 };
+      }
+      
+      await apiRequest(endpoint, 'POST', body);
+      showToast(`${type} enviado! ✅`);
       input.value = '';
-      setTimeout(() => loadMessages(currentChat.number), 2000);
+      setTimeout(() => loadMessages(currentChat.id), 2000);
     };
     reader.readAsDataURL(file);
   } catch (err) {
     showToast(`Erro: ${err.message}`);
-  }
-}
-
-// ENVIAR ÁUDIO
-async function sendAudio(input) {
-  if (!currentChat) {
-    showToast('Selecione uma conversa primeiro');
-    return;
-  }
-  
-  const file = input.files[0];
-  if (!file) return;
-  
-  showToast('Enviando áudio...');
-  
-  try {
-    const reader = new FileReader();
-    reader.onloadend = async function() {
-      const base64 = reader.result.split(',')[1];
-      
-      const encoded = encodeURIComponent(INSTANCE);
-      await apiRequest(`/message/sendWhatsAppAudio/${encoded}`, 'POST', {
-        number: currentChat.number,
-        audio: base64
-      });
-      
-      showToast('Áudio enviado! ✅');
-      input.value = '';
-      setTimeout(() => loadMessages(currentChat.number), 2000);
-    };
-    reader.readAsDataURL(file);
-  } catch (err) {
-    showToast(`Erro: ${err.message}`);
+    input.value = '';
   }
 }
 
 function updateStatus(newStatus) {
   if (!currentChat) return;
-  statusMap[currentChat.number] = newStatus;
+  statusMap[currentChat.id] = newStatus;
   localStorage.setItem('chat_status', JSON.stringify(statusMap));
   renderChatList();
   const statusText = {pendente:'Pendente', em_atendimento:'Em atendimento', finalizado:'Finalizado'}[newStatus];
@@ -544,7 +515,7 @@ function setTab(tab, btn) {
 }
 
 loadChats();
-setInterval(() => { loadChats(); if (currentChat) loadMessages(currentChat.number); }, 15000);
+setInterval(() => { loadChats(); if (currentChat) loadMessages(currentChat.id); }, 10000);
 </script>
 </body>
 </html>
