@@ -3,93 +3,66 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Atendimento WhatsApp - Evolution API</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css"/>
+<title>Atendimento WhatsApp</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Segoe UI',sans-serif;background:#f0f2f5;height:100vh;overflow:hidden}
 .app{display:flex;height:100vh}
-.sidebar{width:350px;background:#fff;border-right:1px solid #e0e0e0;display:flex;flex-direction:column}
-.sidebar-header{padding:16px;border-bottom:1px solid #e0e0e0}
-.sidebar-header h2{font-size:18px;display:flex;justify-content:space-between;align-items:center}
-.search{padding:12px;border-bottom:1px solid #e0e0e0}
-.search input{width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px}
-.tabs{display:flex;border-bottom:1px solid #e0e0e0}
-.tab{flex:1;padding:10px;text-align:center;cursor:pointer;background:none;border:none;font-size:12px}
+.sidebar{width:350px;background:#fff;border-right:1px solid #ddd;display:flex;flex-direction:column}
+.sidebar-header{padding:16px;border-bottom:1px solid #ddd}
+.sidebar-header h2{font-size:18px;display:flex;justify-content:space-between}
+.search{padding:12px;border-bottom:1px solid #ddd}
+.search input{width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:8px}
+.tabs{display:flex;border-bottom:1px solid #ddd}
+.tab{flex:1;padding:10px;text-align:center;cursor:pointer;background:none;border:none}
 .tab.active{color:#075e54;border-bottom:2px solid #075e54}
 .conv-list{flex:1;overflow-y:auto}
 .conv-item{display:flex;align-items:center;padding:12px;cursor:pointer;border-bottom:1px solid #f0f0f0}
 .conv-item:hover{background:#f5f5f5}
 .conv-item.active{background:#e8f5e9}
 .avatar{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold;margin-right:12px;flex-shrink:0}
-.conv-info{flex:1;min-width:0}
-.conv-name{font-weight:500;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.conv-number{font-size:11px;color:#075e54;margin-top:2px;font-family:monospace}
-.conv-badges{display:flex;gap:4px;margin-top:4px}
-.badge{font-size:10px;padding:2px 6px;border-radius:4px}
+.conv-info{flex:1}
+.conv-name{font-weight:500;font-size:14px}
+.conv-number{font-size:11px;color:#666}
+.badge{font-size:10px;padding:2px 6px;border-radius:4px;display:inline-block}
 .badge-pendente{background:#fff3cd;color:#856404}
 .badge-ativo{background:#d4edda;color:#155724}
-.badge-finalizado{background:#f8d7da;color:#721c24}
-.main{flex:1;display:flex;flex-direction:column;background:#f0f2f5;min-width:0}
-.chat-header{background:#fff;padding:12px 16px;border-bottom:1px solid #e0e0e0;display:flex;align-items:center;gap:12px}
-.chat-info{flex:1;min-width:0}
-.chat-name{font-weight:600;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.chat-number{font-size:11px;color:#075e54;font-family:monospace}
-.status-buttons{display:flex;gap:8px;flex-shrink:0}
-.status-btn{padding:6px 12px;border:1px solid #ddd;border-radius:20px;cursor:pointer;font-size:11px;background:#fff}
-.status-btn:hover{background:#f0f0f0}
+.main{flex:1;display:flex;flex-direction:column}
+.chat-header{background:#fff;padding:12px 16px;border-bottom:1px solid #ddd;display:flex;align-items:center;gap:12px}
+.chat-info{flex:1}
+.chat-name{font-weight:600;font-size:16px}
+.chat-number{font-size:11px;color:#666}
+.status-buttons{display:flex;gap:8px}
+.status-btn{padding:6px 12px;border:1px solid #ddd;border-radius:20px;cursor:pointer;background:#fff;font-size:11px}
 .messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:8px}
-.message{max-width:70%;padding:8px 12px;border-radius:12px;font-size:13px;word-break:break-word}
+.message{max-width:70%;padding:8px 12px;border-radius:12px;font-size:13px}
 .message.out{background:#dcf8c6;align-self:flex-end}
-.message.in{background:#fff;align-self:flex-start;border:1px solid #e0e0e0}
-.message-media{max-width:70%;margin:4px 0}
-.message-media.out{align-self:flex-end}
-.message-media.in{align-self:flex-start}
-.message-media img{max-width:100%;border-radius:12px;cursor:pointer;max-height:300px}
-.message-media audio{width:250px;border-radius:12px}
-.message-media video{max-width:100%;border-radius:12px}
-.input-area{padding:12px;background:#fff;border-top:1px solid #e0e0e0}
-.input-tools{display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap}
-.tool-btn{background:none;border:none;cursor:pointer;padding:6px 10px;border-radius:8px;font-size:14px;display:flex;align-items:center;gap:4px}
-.tool-btn:hover{background:#f0f0f0}
+.message.in{background:#fff;align-self:flex-start;border:1px solid #ddd}
+.input-area{padding:12px;background:#fff;border-top:1px solid #ddd}
 .input-row{display:flex;gap:8px}
-.input-row textarea{flex:1;padding:10px;border:1px solid #ddd;border-radius:20px;resize:none;font-family:inherit;font-size:14px}
+.input-row textarea{flex:1;padding:10px;border:1px solid #ddd;border-radius:20px;resize:none;font-family:inherit}
 .input-row button{background:#075e54;color:#fff;border:none;border-radius:20px;padding:0 20px;cursor:pointer}
-.file-input{display:none}
-.preview-area{padding:8px;background:#f5f5f5;border-radius:8px;margin-top:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.right-panel{width:300px;background:#fff;border-left:1px solid #e0e0e0;padding:16px;overflow-y:auto;flex-shrink:0}
-.right-panel h4{font-size:14px;margin-bottom:12px;color:#666}
-.detail-row{margin-bottom:12px}
-.detail-label{font-size:11px;color:#999;margin-bottom:2px}
-.detail-value{font-size:12px;word-break:break-all;font-family:monospace}
+.right-panel{width:280px;background:#fff;border-left:1px solid #ddd;padding:16px}
 .empty-state{display:flex;flex:1;align-items:center;justify-content:center;color:#999;flex-direction:column;gap:12px}
 .loading{padding:20px;text-align:center;color:#999}
 .spin{display:inline-block;width:20px;height:20px;border:2px solid #ddd;border-top-color:#075e54;border-radius:50%;animation:spin 0.8s linear infinite}
-.toast{position:fixed;bottom:20px;right:20px;background:#333;color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;z-index:1000;opacity:0;transition:opacity 0.3s}
+@keyframes spin{to{transform:rotate(360deg)}}
+.toast{position:fixed;bottom:20px;right:20px;background:#333;color:#fff;padding:10px 16px;border-radius:8px;z-index:1000;opacity:0;transition:opacity 0.3s}
 .toast.show{opacity:1}
 </style>
 </head>
 <body>
-
 <div class="app">
   <div class="sidebar">
-    <div class="sidebar-header">
-      <h2>💬 Atendimento <button onclick="loadChats()" style="background:none;border:none;cursor:pointer;font-size:16px">🔄</button></h2>
-    </div>
-    <div class="search">
-      <input type="text" id="searchInput" placeholder="Buscar contato..." oninput="filterChats()">
-    </div>
+    <div class="sidebar-header"><h2>💬 Atendimento <button onclick="loadChats()" style="background:none;border:none;cursor:pointer">🔄</button></h2></div>
+    <div class="search"><input type="text" id="searchInput" placeholder="Buscar..." oninput="filterChats()"></div>
     <div class="tabs">
       <button class="tab active" onclick="setTab('all',this)">Todas</button>
       <button class="tab" onclick="setTab('pendente',this)">Pendentes</button>
       <button class="tab" onclick="setTab('em_atendimento',this)">Ativas</button>
-      <button class="tab" onclick="setTab('finalizado',this)">Finalizadas</button>
     </div>
-    <div class="conv-list" id="convList">
-      <div class="loading"><div class="spin"></div><br>Carregando...</div>
-    </div>
+    <div class="conv-list" id="convList"><div class="loading"><div class="spin"></div><br>Carregando...</div></div>
   </div>
-
   <div class="main">
     <div class="chat-header" id="chatHeader" style="display:none">
       <div class="avatar" id="headerAvatar" style="background:#ccc">--</div>
@@ -100,52 +73,29 @@ body{font-family:'Segoe UI',sans-serif;background:#f0f2f5;height:100vh;overflow:
       <div class="status-buttons">
         <button class="status-btn" onclick="updateStatus('pendente')">⏳ Pendente</button>
         <button class="status-btn" onclick="updateStatus('em_atendimento')">▶ Atender</button>
-        <button class="status-btn" onclick="updateStatus('finalizado')">✓ Finalizar</button>
       </div>
     </div>
-    <div class="messages" id="messagesArea">
-      <div class="empty-state"><div>💬</div><div>Selecione uma conversa</div></div>
-    </div>
+    <div class="messages" id="messagesArea"><div class="empty-state">💬 Selecione uma conversa</div></div>
     <div class="input-area" id="inputArea" style="display:none">
-      <div class="input-tools">
-        <button class="tool-btn" onclick="document.getElementById('imageInput').click()">📷 Imagem</button>
-        <button class="tool-btn" onclick="document.getElementById('audioInput').click()">🎵 Áudio</button>
-        <button class="tool-btn" onclick="document.getElementById('docInput').click()">📎 Documento</button>
-      </div>
       <div class="input-row">
-        <textarea id="messageInput" placeholder="Digite sua mensagem..." rows="2" onkeydown="if(event.key=='Enter'&&!event.shiftKey){event.preventDefault();sendTextMessage()}"></textarea>
-        <button onclick="sendTextMessage()">Enviar 📤</button>
+        <textarea id="messageInput" placeholder="Digite sua mensagem..." rows="2" onkeydown="if(event.key=='Enter'&&!event.shiftKey){event.preventDefault();sendMessage()}"></textarea>
+        <button onclick="sendMessage()">Enviar 📤</button>
       </div>
-      <div id="previewArea" class="preview-area" style="display:none"></div>
     </div>
-    <input type="file" id="imageInput" accept="image/*" style="display:none" onchange="sendMedia(this, 'image')">
-    <input type="file" id="audioInput" accept="audio/*" style="display:none" onchange="sendMedia(this, 'audio')">
-    <input type="file" id="docInput" accept=".pdf,.doc,.docx,.txt,.xls,.xlsx" style="display:none" onchange="sendMedia(this, 'document')">
   </div>
-
   <div class="right-panel">
-    <h4>📋 Detalhes do Contato</h4>
-    <div class="detail-row">
-      <div class="detail-label">Nome</div>
-      <div class="detail-value" id="detailName">-</div>
-    </div>
-    <div class="detail-row">
-      <div class="detail-label">Número</div>
-      <div class="detail-value" id="detailNumber" style="color:#075e54;font-weight:bold">-</div>
-    </div>
-    <div class="detail-row">
-      <div class="detail-label">ID da Conversa (LID)</div>
-      <div class="detail-value" id="detailJid" style="font-size:10px">-</div>
-    </div>
+    <h4>📋 Detalhes</h4>
+    <div class="detail-row"><b>Nome:</b> <span id="detailName">-</span></div>
+    <div class="detail-row"><b>Número:</b> <span id="detailNumber">-</span></div>
+    <div class="detail-row"><b>ID:</b> <span id="detailId" style="font-size:10px">-</span></div>
   </div>
 </div>
-
 <div id="toast" class="toast"></div>
 
 <script>
 const BASE_URL = "https://evolution-api-pktx.srv1726422.hstgr.cloud";
-const API_KEY = "C7F99C0B4E14-46E3-B8AB-0959DDC933C8";
-const INSTANCE = "atendimento-limpo";
+const API_KEY = "BA6AD448919F-4C50-9C6D-67F36EFDDA95";
+const INSTANCE = "Novo teste";
 
 let chats = [];
 let currentChat = null;
@@ -165,16 +115,10 @@ async function apiRequest(endpoint, method = 'POST', body = null) {
   const headers = { 'apikey': API_KEY, 'Content-Type': 'application/json' };
   const options = { method, headers };
   if (body) options.body = JSON.stringify(body);
-  
-  try {
-    const resp = await fetch(url, options);
-    const data = await resp.json();
-    if (!resp.ok) throw new Error(data.message || data.error || `HTTP ${resp.status}`);
-    return data;
-  } catch (err) {
-    console.error(`Erro ${endpoint}:`, err);
-    throw err;
-  }
+  const resp = await fetch(url, options);
+  const data = await resp.json();
+  if (!resp.ok) throw new Error(data.message || data.error || `HTTP ${resp.status}`);
+  return data;
 }
 
 async function loadChats() {
@@ -187,335 +131,133 @@ async function loadChats() {
     else if (data?.records) rawChats = data.records;
     else if (data?.chats) rawChats = data.chats;
     
-    // Mapa para garantir que cada conversa seja única pelo remoteJid ORIGINAL
     const uniqueChats = new Map();
-    
-    rawChats.forEach(chat => {
-      // IMPORTANTE: Usamos o remoteJid ORIGINAL da API (pode ser @lid ou @s.whatsapp.net)
+    for (const chat of rawChats) {
       const remoteJid = chat.remoteJid || chat.id || chat.jid;
-      if (!remoteJid) return;
-      
-      // Extrai o número de telefone para exibição (do remoteJidAlt se disponível)
-      let displayNumber = '';
-      if (chat.lastMessage?.key?.remoteJidAlt) {
-        displayNumber = chat.lastMessage.key.remoteJidAlt.split('@')[0];
-      } else {
-        displayNumber = remoteJid.split('@')[0];
-      }
-      displayNumber = displayNumber.replace(/\D/g, '');
-      
-      // Nome do contato
-      let name = chat.pushName || chat.name || chat.senderName;
-      if (!name || name === 'null' || name === displayNumber) {
-        name = formatPhoneNumber(displayNumber);
-      }
-      
-      // Usa o remoteJid como chave única (isso resolve o problema de misturar conversas)
+      if (!remoteJid) continue;
       if (!uniqueChats.has(remoteJid)) {
-        uniqueChats.set(remoteJid, {
-          id: remoteJid,           // JID original da conversa (@lid ou @s.whatsapp.net)
-          number: displayNumber,   // Número para exibição
-          name: name
-        });
+        let number = remoteJid.split('@')[0].replace(/\D/g, '');
+        let name = chat.pushName || chat.name || chat.senderName || number;
+        if (name === 'null' || name === number) name = formatNumber(number);
+        uniqueChats.set(remoteJid, { id: remoteJid, number: number, name: name });
       }
-    });
-    
+    }
     chats = Array.from(uniqueChats.values());
-    console.log('✅ Chats carregados:', chats);
+    console.log('Chats:', chats.length);
     renderChatList();
-    showToast(`${chats.length} conversas carregadas`);
-  } catch (err) {
-    console.error(err);
-  }
+    if(chats.length === 0) showToast('Nenhuma conversa. Envie uma mensagem para começar!');
+  } catch(err) { console.error(err); showToast(`Erro: ${err.message}`); }
 }
 
-function formatPhoneNumber(num) {
+function formatNumber(num) {
   if (!num) return '';
-  const clean = num.replace(/\D/g, '');
-  if (clean.length === 11 && clean.startsWith('55')) {
-    return `+55 (${clean.slice(2,4)}) ${clean.slice(4,9)}-${clean.slice(9)}`;
-  }
-  if (clean.length === 13 && clean.startsWith('55')) {
-    return `+55 (${clean.slice(2,4)}) ${clean.slice(4,9)}-${clean.slice(9,13)}`;
-  }
-  return clean;
+  const c = num.replace(/\D/g, '');
+  if (c.length === 11) return `+55 (${c.slice(2,4)}) ${c.slice(4,9)}-${c.slice(9)}`;
+  return c;
 }
 
 function renderChatList() {
   const container = document.getElementById('convList');
-  let filtered = chats.filter(chat => {
-    if (currentFilter && !chat.name.toLowerCase().includes(currentFilter.toLowerCase()) && 
-        !chat.number.includes(currentFilter)) return false;
-    const status = statusMap[chat.id] || 'pendente';
-    if (currentTab !== 'all' && status !== currentTab) return false;
+  let filtered = chats.filter(c => {
+    if (currentFilter && !c.name.toLowerCase().includes(currentFilter.toLowerCase()) && !c.number.includes(currentFilter)) return false;
+    const s = statusMap[c.id] || 'pendente';
+    if (currentTab !== 'all' && s !== currentTab) return false;
     return true;
   });
-  
-  if (filtered.length === 0) {
-    container.innerHTML = '<div class="loading">Nenhum contato encontrado</div>';
-    return;
-  }
+  if (filtered.length === 0) { container.innerHTML = '<div class="loading">Nenhuma conversa</div>'; return; }
   
   let html = '';
-  filtered.forEach(chat => {
-    const status = statusMap[chat.id] || 'pendente';
-    let statusClass = 'badge-pendente', statusText = 'Pendente';
-    if (status === 'em_atendimento') { statusClass = 'badge-ativo'; statusText = 'Ativo'; }
-    if (status === 'finalizado') { statusClass = 'badge-finalizado'; statusText = 'Finalizado'; }
-    
-    const bgColor = getAvatarColor(chat.id);
-    const isActive = currentChat?.id === chat.id;
-    const formattedNumber = formatPhoneNumber(chat.number);
-    
-    html += `
-      <div class="conv-item ${isActive ? 'active' : ''}" onclick="selectChat('${chat.id.replace(/'/g, "\\'")}')">
-        <div class="avatar" style="background:${bgColor}">${chat.name.substring(0,2).toUpperCase()}</div>
-        <div class="conv-info">
-          <div class="conv-name">${escapeHtml(chat.name)}</div>
-          <div class="conv-number">${escapeHtml(formattedNumber)}</div>
-          <div class="conv-badges">
-            <span class="badge ${statusClass}">${statusText}</span>
-          </div>
-        </div>
+  for (const c of filtered) {
+    const s = statusMap[c.id] || 'pendente';
+    const sc = s === 'em_atendimento' ? 'badge-ativo' : 'badge-pendente';
+    const st = s === 'em_atendimento' ? 'Ativo' : 'Pendente';
+    const bg = getColor(c.id);
+    const active = currentChat?.id === c.id ? 'active' : '';
+    html += `<div class="conv-item ${active}" onclick="selectChat('${c.id.replace(/'/g,"\\'")}')">
+      <div class="avatar" style="background:${bg}">${c.name.substring(0,2).toUpperCase()}</div>
+      <div class="conv-info">
+        <div class="conv-name">${escapeHtml(c.name)}</div>
+        <div class="conv-number">${formatNumber(c.number)}</div>
+        <div style="margin-top:4px"><span class="badge ${sc}">${st}</span></div>
       </div>
-    `;
-  });
+    </div>`;
+  }
   container.innerHTML = html;
 }
 
-function getAvatarColor(str) {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) hash = ((hash << 5) - hash) + str.charCodeAt(i);
-  const colors = ['#9FE1CB', '#B5D4F4', '#FAC775', '#F4C0D1', '#D4E0FF'];
-  return colors[Math.abs(hash) % colors.length];
-}
+function getColor(str) { let h=0; for(let i=0;i<str.length;i++) h=((h<<5)-h)+str.charCodeAt(i); const colors=['#9FE1CB','#B5D4F4','#FAC775','#F4C0D1','#D4E0FF']; return colors[Math.abs(h)%colors.length]; }
+function escapeHtml(t) { if(!t) return ''; const d=document.createElement('div'); d.textContent=t; return d.innerHTML; }
 
-function escapeHtml(text) {
-  if (!text) return '';
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
-}
-
-async function selectChat(chatId) {
-  console.log(`🔍 Selecionando chat com ID: ${chatId}`);
-  const chat = chats.find(c => c.id === chatId);
+async function selectChat(id) {
+  const chat = chats.find(c => c.id === id);
   if (!chat) return;
-  
   currentChat = chat;
-  const formattedNumber = formatPhoneNumber(chat.number);
-  
   document.getElementById('chatHeader').style.display = 'flex';
   document.getElementById('inputArea').style.display = 'flex';
   document.getElementById('chatName').textContent = chat.name;
-  document.getElementById('chatNumber').textContent = formattedNumber;
+  document.getElementById('chatNumber').textContent = formatNumber(chat.number);
   document.getElementById('detailName').textContent = chat.name;
-  document.getElementById('detailNumber').textContent = formattedNumber;
-  document.getElementById('detailJid').textContent = chat.id;
-  
-  const bgColor = getAvatarColor(chat.id);
-  document.getElementById('headerAvatar').style.background = bgColor;
+  document.getElementById('detailNumber').textContent = formatNumber(chat.number);
+  document.getElementById('detailId').textContent = chat.id;
+  document.getElementById('headerAvatar').style.background = getColor(chat.id);
   document.getElementById('headerAvatar').textContent = chat.name.substring(0,2).toUpperCase();
-  
-  document.getElementById('messagesArea').innerHTML = '<div class="loading"><div class="spin"></div><br>Carregando mensagens...</div>';
+  document.getElementById('messagesArea').innerHTML = '<div class="loading"><div class="spin"></div><br>Carregando...</div>';
   await loadMessages(chat.id);
   renderChatList();
-}
-
-function renderMessage(msg) {
-  if (!msg || typeof msg !== 'object') return null;
-  
-  const isFromMe = msg.key?.fromMe === true || msg.fromMe === true;
-  const direction = isFromMe ? 'out' : 'in';
-  const timestamp = msg.messageTimestamp ? new Date(msg.messageTimestamp * 1000).toLocaleTimeString() : '';
-  
-  // TEXTO
-  let text = msg.message?.conversation || 
-             msg.message?.extendedTextMessage?.text || 
-             msg.text || msg.body || msg.content;
-  
-  if (text) {
-    return `<div class="message ${direction}">${escapeHtml(text)}<div style="font-size:9px;color:#999;margin-top:4px">${timestamp}</div></div>`;
-  }
-  
-  // IMAGEM
-  if (msg.message?.imageMessage) {
-    const caption = msg.message.imageMessage.caption || '';
-    const url = msg.message.imageMessage.url || '';
-    return `
-      <div class="message-media ${direction}">
-        ${caption ? `<div class="message ${direction}" style="margin-bottom:4px">${escapeHtml(caption)}</div>` : ''}
-        ${url ? `<img src="${url}" alt="Imagem" onclick="window.open('${url}')">` : '📷 Imagem'}
-        <div style="font-size:9px;color:#999;margin-top:4px">${timestamp}</div>
-      </div>
-    `;
-  }
-  
-  // ÁUDIO
-  if (msg.message?.audioMessage) {
-    const url = msg.message.audioMessage.url || '';
-    return `
-      <div class="message-media ${direction}">
-        <audio controls src="${url}"></audio>
-        <div style="font-size:9px;color:#999;margin-top:4px">${timestamp}</div>
-      </div>
-    `;
-  }
-  
-  // DOCUMENTO
-  if (msg.message?.documentMessage) {
-    const fileName = msg.message.documentMessage.fileName || 'Documento';
-    const url = msg.message.documentMessage.url || '';
-    return `
-      <div class="message ${direction}">
-        📎 <a href="${url}" target="_blank">${escapeHtml(fileName)}</a>
-        <div style="font-size:9px;color:#999;margin-top:4px">${timestamp}</div>
-      </div>
-    `;
-  }
-  
-  return null;
 }
 
 async function loadMessages(chatId) {
   try {
     const encoded = encodeURIComponent(INSTANCE);
-    // Busca mensagens usando o chatId (que pode ser @lid ou @s.whatsapp.net)
-    const data = await apiRequest(`/chat/findMessages/${encoded}`, 'POST', {
-      where: { remoteJid: chatId },
-      limit: 100
-    });
-    
+    const data = await apiRequest(`/chat/findMessages/${encoded}`, 'POST', { where: { remoteJid: chatId }, limit: 100 });
     let messages = [];
-    
-    if (data?.messages?.records && Array.isArray(data.messages.records)) {
-      messages = data.messages.records;
-    } else if (data?.messages && typeof data.messages === 'object') {
-      messages = Object.values(data.messages).filter(v => v && typeof v === 'object');
-    } else if (Array.isArray(data)) {
-      messages = data;
-    }
-    
-    if (messages.length === 0) {
-      document.getElementById('messagesArea').innerHTML = '<div class="empty-state">💬 Nenhuma mensagem encontrada</div>';
-      return;
-    }
-    
+    if (data?.messages?.records) messages = data.messages.records;
+    else if (data?.messages && typeof data.messages === 'object') messages = Object.values(data.messages);
+    else if (Array.isArray(data)) messages = data;
+    if (messages.length === 0) { document.getElementById('messagesArea').innerHTML = '<div class="empty-state">💬 Nenhuma mensagem</div>'; return; }
     let html = '';
-    for (const msg of messages) {
-      const messageHtml = renderMessage(msg);
-      if (messageHtml) html += messageHtml;
+    for (const m of messages) {
+      const isFromMe = m.key?.fromMe === true || m.fromMe === true;
+      const dir = isFromMe ? 'out' : 'in';
+      let text = m.message?.conversation || m.message?.extendedTextMessage?.text || m.text || m.body;
+      if (text) html += `<div class="message ${dir}">${escapeHtml(text)}</div>`;
     }
-    
     document.getElementById('messagesArea').innerHTML = html;
     document.getElementById('messagesArea').scrollTop = document.getElementById('messagesArea').scrollHeight;
-    
-  } catch (err) {
-    console.error('❌ Erro:', err);
-    document.getElementById('messagesArea').innerHTML = `<div class="empty-state">❌ Erro ao carregar mensagens</div>`;
-  }
+  } catch(err) { console.error(err); }
 }
 
-async function sendTextMessage() {
-  if (!currentChat) {
-    showToast('Selecione uma conversa primeiro');
-    return;
-  }
-  
+async function sendMessage() {
+  if (!currentChat) { showToast('Selecione uma conversa'); return; }
   const input = document.getElementById('messageInput');
   const text = input.value.trim();
   if (!text) return;
-  
   try {
     const encoded = encodeURIComponent(INSTANCE);
-    await apiRequest(`/message/sendText/${encoded}`, 'POST', {
-      number: currentChat.number,
-      text: text,
-      delay: 1200
-    });
-    
+    await apiRequest(`/message/sendText/${encoded}`, 'POST', { number: currentChat.number, text: text, delay: 1200 });
     input.value = '';
-    showToast('Mensagem enviada! ✅');
-    
-    const timestamp = new Date().toLocaleTimeString();
+    showToast('Enviado! ✅');
     const container = document.getElementById('messagesArea');
-    if (container.innerHTML.includes('Nenhuma mensagem')) container.innerHTML = '';
-    container.innerHTML += `<div class="message out">${escapeHtml(text)}<div style="font-size:9px;color:#999;margin-top:4px">${timestamp}</div></div>`;
+    if (container.innerHTML.includes('Nenhuma')) container.innerHTML = '';
+    container.innerHTML += `<div class="message out">${escapeHtml(text)}</div>`;
     container.scrollTop = container.scrollHeight;
-    
     setTimeout(() => loadMessages(currentChat.id), 2000);
-  } catch (err) {
-    showToast(`Erro: ${err.message}`);
-  }
+    setTimeout(() => loadChats(), 3000);
+  } catch(err) { showToast(`Erro: ${err.message}`); }
 }
 
-async function sendMedia(input, type) {
-  if (!currentChat) {
-    showToast('Selecione uma conversa primeiro');
-    input.value = '';
-    return;
-  }
-  
-  const file = input.files[0];
-  if (!file) return;
-  
-  showToast(`Enviando ${type}...`);
-  
-  try {
-    const reader = new FileReader();
-    reader.onloadend = async function() {
-      const base64 = reader.result.split(',')[1];
-      const encoded = encodeURIComponent(INSTANCE);
-      
-      let endpoint = `/message/sendMedia/${encoded}`;
-      let body = {
-        number: currentChat.number,
-        media: base64,
-        mimetype: file.type,
-        fileName: file.name,
-        caption: ''
-      };
-      
-      if (type === 'audio') {
-        endpoint = `/message/sendWhatsAppAudio/${encoded}`;
-        body = { number: currentChat.number, audio: base64 };
-      }
-      
-      await apiRequest(endpoint, 'POST', body);
-      showToast(`${type} enviado! ✅`);
-      input.value = '';
-      setTimeout(() => loadMessages(currentChat.id), 2000);
-    };
-    reader.readAsDataURL(file);
-  } catch (err) {
-    showToast(`Erro: ${err.message}`);
-    input.value = '';
-  }
-}
-
-function updateStatus(newStatus) {
+function updateStatus(s) {
   if (!currentChat) return;
-  statusMap[currentChat.id] = newStatus;
+  statusMap[currentChat.id] = s;
   localStorage.setItem('chat_status', JSON.stringify(statusMap));
   renderChatList();
-  const statusText = {pendente:'Pendente', em_atendimento:'Em atendimento', finalizado:'Finalizado'}[newStatus];
-  showToast(`Status: ${statusText}`);
+  showToast(`Status: ${s === 'em_atendimento' ? 'Em atendimento' : 'Pendente'}`);
 }
-
-function filterChats() {
-  currentFilter = document.getElementById('searchInput').value;
-  renderChatList();
-}
-
-function setTab(tab, btn) {
-  currentTab = tab;
-  document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  renderChatList();
-}
+function filterChats() { currentFilter = document.getElementById('searchInput').value; renderChatList(); }
+function setTab(tab, btn) { currentTab = tab; document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); renderChatList(); }
 
 loadChats();
-setInterval(() => { loadChats(); if (currentChat) loadMessages(currentChat.id); }, 10000);
+setInterval(() => { loadChats(); if(currentChat) loadMessages(currentChat.id); }, 10000);
 </script>
 </body>
 </html>
