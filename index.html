@@ -162,6 +162,7 @@ function formatNumber(num) {
   if (!num) return '';
   const c = num.replace(/\D/g, '');
   if (c.length === 11) return `+55 (${c.slice(2,4)}) ${c.slice(4,9)}-${c.slice(9)}`;
+  if (c.length === 13) return `+${c.slice(0,2)} (${c.slice(2,4)}) ${c.slice(4,9)}-${c.slice(9)}`;
   return c;
 }
 
@@ -234,7 +235,7 @@ async function loadMessages(chatId) {
     else if (Array.isArray(data)) messages = data;
     
     if (messages.length === 0) { 
-      document.getElementById('messagesArea').innerHTML = '<div class="empty-state">💬 Nenhuma mensagem ainda<br>Digite um número e envie!</div>';
+      document.getElementById('messagesArea').innerHTML = '<div class="empty-state">💬 Nenhuma mensagem ainda</div>';
       return; 
     }
     
@@ -257,8 +258,6 @@ async function sendMessage() {
   
   let recipient = '';
   let recipientType = 'number';
-  
-  // PRIORIDADE 1: Número digitado manualmente
   let manualNumber = document.getElementById('manualNumber').value.trim();
   
   if (manualNumber) {
@@ -270,13 +269,12 @@ async function sendMessage() {
     console.log('📤 Enviando para número manual:', recipient);
   } 
   else if (currentChat) {
-    // PRIORIDADE 2: Usa o JID da conversa (pode ser LID)
     recipient = currentChat.id;
     recipientType = 'jid';
     console.log('📤 Enviando para JID/LID:', recipient);
   } 
   else {
-    showToast('Digite um número no campo acima ou selecione uma conversa');
+    showToast('Digite um número no campo acima');
     return;
   }
   
@@ -285,17 +283,9 @@ async function sendMessage() {
     let body = {};
     
     if (recipientType === 'jid') {
-      body = { 
-        number: recipient, 
-        text: text, 
-        delay: 1200 
-      };
+      body = { jid: recipient, text: text, delay: 1200 };
     } else {
-      body = { 
-        number: recipient, 
-        text: text, 
-        delay: 1200 
-      };
+      body = { number: recipient, text: text, delay: 1200 };
     }
     
     const response = await fetch(`${BASE_URL}/message/sendText/${encoded}`, {
