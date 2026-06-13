@@ -39,10 +39,11 @@ body{font-family:'Segoe UI',sans-serif;background:#f0f2f5;height:100vh;overflow:
 .message.out{background:#dcf8c6;align-self:flex-end}
 .message.in{background:#fff;align-self:flex-start;border:1px solid #ddd}
 .input-area{padding:12px;background:#fff;border-top:1px solid #ddd}
-.manual-number-input{width:100%;padding:10px;margin-bottom:10px;border:1px solid #ddd;border-radius:20px;font-size:14px}
+.number-input-area{margin-bottom:10px}
+.number-input-area input{width:100%;padding:10px;border:1px solid #ddd;border-radius:20px;font-size:14px;background:#f8f8f8}
 .input-row{display:flex;gap:8px}
-.input-row textarea{flex:1;padding:10px;border:1px solid #ddd;border-radius:20px;resize:none;font-family:inherit}
-.input-row button{background:#075e54;color:#fff;border:none;border-radius:20px;padding:0 20px;cursor:pointer}
+.input-row textarea{flex:1;padding:10px;border:1px solid #ddd;border-radius:20px;resize:none;font-family:inherit;font-size:14px}
+.input-row button{background:#075e54;color:#fff;border:none;border-radius:20px;padding:0 20px;cursor:pointer;font-weight:bold}
 .right-panel{width:280px;background:#fff;border-left:1px solid #ddd;padding:16px}
 .detail-row{margin-bottom:12px}
 .empty-state{display:flex;flex:1;align-items:center;justify-content:center;color:#999;flex-direction:column;gap:12px}
@@ -57,7 +58,7 @@ body{font-family:'Segoe UI',sans-serif;background:#f0f2f5;height:100vh;overflow:
 <div class="app">
   <div class="sidebar">
     <div class="sidebar-header"><h2>💬 Atendimento <button onclick="loadChats()" style="background:none;border:none;cursor:pointer">🔄</button></h2></div>
-    <div class="search"><input type="text" id="searchInput" placeholder="Buscar..." oninput="filterChats()"></div>
+    <div class="search"><input type="text" id="searchInput" placeholder="Buscar contato..." oninput="filterChats()"></div>
     <div class="tabs">
       <button class="tab active" onclick="setTab('all',this)">Todas</button>
       <button class="tab" onclick="setTab('pendente',this)">Pendentes</button>
@@ -79,8 +80,10 @@ body{font-family:'Segoe UI',sans-serif;background:#f0f2f5;height:100vh;overflow:
     </div>
     <div class="messages" id="messagesArea"><div class="empty-state">💬 Selecione uma conversa</div></div>
     <div class="input-area" id="inputArea" style="display:none">
-      <!-- CAMPO MANUAL PARA DIGITAR O NÚMERO -->
-      <input type="text" id="manualNumber" class="manual-number-input" placeholder="📱 Digite o número manualmente (ex: 5511988887777)">
+      <!-- Campo de número no TOPO (antes da mensagem) -->
+      <div class="number-input-area">
+        <input type="text" id="manualNumber" placeholder="📱 Digite o número do WhatsApp (ex: 5511988887777)">
+      </div>
       <div class="input-row">
         <textarea id="messageInput" placeholder="Digite sua mensagem..." rows="2" onkeydown="if(event.key=='Enter'&&!event.shiftKey){event.preventDefault();sendMessage()}"></textarea>
         <button onclick="sendMessage()">Enviar 📤</button>
@@ -208,7 +211,7 @@ async function selectChat(id) {
   document.getElementById('headerAvatar').style.background = getColor(chat.id);
   document.getElementById('headerAvatar').textContent = chat.name.substring(0,2).toUpperCase();
   
-  // Preenche o campo manual com o número do chat (se tiver)
+  // Preenche o campo manual com o número do chat
   if (chat.number && chat.number.length >= 10) {
     document.getElementById('manualNumber').value = chat.number;
   }
@@ -216,6 +219,12 @@ async function selectChat(id) {
   document.getElementById('messagesArea').innerHTML = '<div class="loading"><div class="spin"></div><br>Carregando...</div>';
   await loadMessages(chat.id);
   renderChatList();
+}
+
+// Função para rolar para o final das mensagens
+function scrollToBottom() {
+  const messagesDiv = document.getElementById('messagesArea');
+  messagesDiv.scrollTop = messagesDiv.scrollHeight;
 }
 
 async function loadMessages(chatId) {
@@ -226,7 +235,12 @@ async function loadMessages(chatId) {
     if (data?.messages?.records) messages = data.messages.records;
     else if (data?.messages && typeof data.messages === 'object') messages = Object.values(data.messages);
     else if (Array.isArray(data)) messages = data;
-    if (messages.length === 0) { document.getElementById('messagesArea').innerHTML = '<div class="empty-state">💬 Nenhuma mensagem</div>'; return; }
+    
+    if (messages.length === 0) { 
+      document.getElementById('messagesArea').innerHTML = '<div class="empty-state">💬 Nenhuma mensagem ainda<br>Digite um número e envie!</div>';
+      return; 
+    }
+    
     let html = '';
     for (const m of messages) {
       const isFromMe = m.key?.fromMe === true || m.fromMe === true;
@@ -235,7 +249,9 @@ async function loadMessages(chatId) {
       if (text) html += `<div class="message ${dir}">${escapeHtml(text)}</div>`;
     }
     document.getElementById('messagesArea').innerHTML = html;
-    document.getElementById('messagesArea').scrollTop = document.getElementById('messagesArea').scrollHeight;
+    
+    // CORREÇÃO: Rola para o FINAL (última mensagem)
+    setTimeout(scrollToBottom, 100);
   } catch(err) { console.error(err); }
 }
 
@@ -244,7 +260,6 @@ async function sendMessage() {
   const text = input.value.trim();
   if (!text) { showToast('Digite uma mensagem'); return; }
   
-  // PRIORIDADE: Usa o número digitado MANUALMENTE
   let cleanNumber = document.getElementById('manualNumber').value.trim();
   
   if (!cleanNumber) {
@@ -252,16 +267,12 @@ async function sendMessage() {
     return;
   }
   
-  // Remove tudo que não é número
   cleanNumber = cleanNumber.replace(/\D/g, '');
-  
-  // Adiciona 55 se necessário
   if (!cleanNumber.startsWith('55') && cleanNumber.length === 11) {
     cleanNumber = '55' + cleanNumber;
   }
   
-  console.log('📤 Enviando mensagem para:', cleanNumber);
-  console.log('📝 Mensagem:', text);
+  console.log('📤 Enviando para:', cleanNumber);
   
   try {
     const encoded = encodeURIComponent(INSTANCE);
@@ -272,22 +283,20 @@ async function sendMessage() {
     });
     
     const result = await response.json();
-    console.log('📥 Resposta:', result);
-    
-    if (!response.ok) throw new Error(result.message || result.error || 'Erro');
+    if (!response.ok) throw new Error(result.message || result.error);
     
     input.value = '';
     showToast('Mensagem enviada! ✅');
     
-    // Adiciona na tela
+    // Adiciona mensagem na tela e ROLA PARA O FINAL
     const container = document.getElementById('messagesArea');
-    if (container.innerHTML.includes('Nenhuma')) container.innerHTML = '';
+    if (container.innerHTML.includes('Nenhuma mensagem')) container.innerHTML = '';
     container.innerHTML += `<div class="message out">${escapeHtml(text)}</div>`;
-    container.scrollTop = container.scrollHeight;
+    scrollToBottom();
     
     setTimeout(() => loadChats(), 2000);
   } catch(err) { 
-    console.error('❌ Erro:', err);
+    console.error(err);
     showToast(`Erro: ${err.message}`); 
   }
 }
