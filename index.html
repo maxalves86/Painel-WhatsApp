@@ -49,7 +49,7 @@ body{font-family:'Segoe UI',sans-serif;background:#f0f2f5;height:100vh;overflow:
 .number-input-area{margin-bottom:10px}
 .number-input-area input{width:100%;padding:10px;border:1px solid #ddd;border-radius:20px;font-size:14px;background:#f8f8f8}
 .input-tools{display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap}
-.tool-btn{background:#f0f0f0;border:none;padding:6px 12px;border-radius:20px;cursor:pointer;font-size:12px}
+.tool-btn{background:#f0f0f0;border:none;padding:6px 12px;border-radius:20px;cursor:pointer;font-size:12px;display:flex;align-items:center;gap:4px}
 .input-row{display:flex;gap:8px}
 .input-row textarea{flex:1;padding:10px;border:1px solid #ddd;border-radius:20px;resize:none;font-family:inherit;font-size:14px}
 .input-row button{background:#075e54;color:#fff;border:none;border-radius:20px;padding:0 20px;cursor:pointer;font-weight:bold}
@@ -62,6 +62,7 @@ body{font-family:'Segoe UI',sans-serif;background:#f0f2f5;height:100vh;overflow:
 .toast{position:fixed;bottom:20px;right:20px;background:#333;color:#fff;padding:10px 16px;border-radius:8px;z-index:1000;opacity:0;transition:opacity 0.3s}
 .toast.show{opacity:1}
 .file-input{display:none}
+.recording{background:#ff4444;color:white;}
 </style>
 </head>
 <body>
@@ -95,7 +96,9 @@ body{font-family:'Segoe UI',sans-serif;background:#f0f2f5;height:100vh;overflow:
       </div>
       <div class="input-tools">
         <button class="tool-btn" onclick="document.getElementById('imageInput').click()">📷 Imagem</button>
-        <button class="tool-btn" onclick="document.getElementById('audioInput').click()">🎵 Áudio</button>
+        <button class="tool-btn" onclick="document.getElementById('videoInput').click()">🎥 Vídeo</button>
+        <button class="tool-btn" id="audioRecordBtn" onclick="toggleRecording()">🎙️ Gravar Áudio</button>
+        <button class="tool-btn" onclick="document.getElementById('docInput').click()">📎 Documento</button>
       </div>
       <div class="input-row">
         <textarea id="messageInput" placeholder="Digite sua mensagem..." rows="2" onkeydown="if(event.key=='Enter'&&!event.shiftKey){event.preventDefault();sendMessage()}"></textarea>
@@ -103,7 +106,8 @@ body{font-family:'Segoe UI',sans-serif;background:#f0f2f5;height:100vh;overflow:
       </div>
     </div>
     <input type="file" id="imageInput" accept="image/*" style="display:none" onchange="sendMedia(this, 'image')">
-    <input type="file" id="audioInput" accept="audio/*" style="display:none" onchange="sendMedia(this, 'audio')">
+    <input type="file" id="videoInput" accept="video/*" style="display:none" onchange="sendMedia(this, 'video')">
+    <input type="file" id="docInput" accept=".pdf,.doc,.docx,.txt,.xls,.xlsx" style="display:none" onchange="sendMedia(this, 'document')">
   </div>
   <div class="right-panel">
     <h4>📋 Detalhes</h4>
@@ -123,6 +127,9 @@ let currentChat = null;
 let currentFilter = '';
 let currentTab = 'all';
 let statusMap = JSON.parse(localStorage.getItem('chat_status') || '{}');
+let mediaRecorder = null;
+let audioChunks = [];
+let isRecording = false;
 
 function showToast(msg) {
   const toast = document.getElementById('toast');
@@ -142,12 +149,26 @@ async function apiRequest(endpoint, method = 'POST', body = null) {
   return data;
 }
 
+// Função para baixar media da Evolution API
+async function downloadMediaUrl(mediaUrl) {
+  if (!mediaUrl) return null;
+  try {
+    const response = await fetch(`${BASE_URL}${mediaUrl}`, {
+      headers: { 'apikey': API_KEY }
+    });
+    const blob = await response.blob();
+    return URL.createObjectURL(blob);
+  } catch(err) {
+    console.error('Erro ao baixar media:', err);
+    return null;
+  }
+}
+
 function formatTimestamp(timestamp) {
   if (!timestamp) return '';
   const date = new Date(timestamp * 1000);
   const now = new Date();
   const isToday = date.toDateString() === now.toDateString();
-  
   if (isToday) {
     return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   } else {
@@ -155,7 +176,7 @@ function formatTimestamp(timestamp) {
   }
 }
 
-function renderMessageContent(msg) {
+async function renderMessageContent(msg) {
   const isFromMe = msg.key?.fromMe === true || msg.fromMe === true;
   const dir = isFromMe ? 'out' : 'in';
   const timestamp = formatTimestamp(msg.messageTimestamp || msg.timestamp);
@@ -169,22 +190,30 @@ function renderMessageContent(msg) {
   // Imagem
   if (msg.message?.imageMessage) {
     const caption = msg.message.imageMessage.caption || '';
-    const url = msg.message.imageMessage.url || '';
+    const mediaKey = msg.message.imageMessage.url || msg.message.imageMessage.directPath;
+    let imageUrl = '';
+    if (mediaKey) {
+      imageUrl = await downloadMediaUrl(mediaKey);
+    }
     return `
       <div class="message-media ${dir}">
         ${caption ? `<div class="message ${dir}" style="margin-bottom:4px">${escapeHtml(caption)}</div>` : ''}
-        ${url ? `<img src="${url}" alt="Imagem" onclick="window.open('${url}')">` : '📷 Imagem'}
+        ${imageUrl ? `<img src="${imageUrl}" alt="Imagem" onclick="window.open('${imageUrl}')" loading="lazy">` : '📷 Imagem (carregando...)'}
         <div class="message-time">${timestamp}</div>
       </div>
     `;
   }
   
-  // Áudio
+  // Áudio/Voz
   if (msg.message?.audioMessage) {
-    const url = msg.message.audioMessage.url || '';
+    const mediaKey = msg.message.audioMessage.url || msg.message.audioMessage.directPath;
+    let audioUrl = '';
+    if (mediaKey) {
+      audioUrl = await downloadMediaUrl(mediaKey);
+    }
     return `
       <div class="message-media ${dir}">
-        <audio controls src="${url}"></audio>
+        <audio controls src="${audioUrl}"></audio>
         <div class="message-time">${timestamp}</div>
       </div>
     `;
@@ -192,12 +221,16 @@ function renderMessageContent(msg) {
   
   // Vídeo
   if (msg.message?.videoMessage) {
-    const url = msg.message.videoMessage.url || '';
     const caption = msg.message.videoMessage.caption || '';
+    const mediaKey = msg.message.videoMessage.url || msg.message.videoMessage.directPath;
+    let videoUrl = '';
+    if (mediaKey) {
+      videoUrl = await downloadMediaUrl(mediaKey);
+    }
     return `
       <div class="message-media ${dir}">
         ${caption ? `<div class="message ${dir}" style="margin-bottom:4px">${escapeHtml(caption)}</div>` : ''}
-        <video controls src="${url}"></video>
+        <video controls src="${videoUrl}"></video>
         <div class="message-time">${timestamp}</div>
       </div>
     `;
@@ -206,10 +239,14 @@ function renderMessageContent(msg) {
   // Documento
   if (msg.message?.documentMessage) {
     const fileName = msg.message.documentMessage.fileName || 'Documento';
-    const url = msg.message.documentMessage.url || '';
+    const mediaKey = msg.message.documentMessage.url || msg.message.documentMessage.directPath;
+    let docUrl = '';
+    if (mediaKey) {
+      docUrl = await downloadMediaUrl(mediaKey);
+    }
     return `
       <div class="message ${dir}">
-        📎 <a href="${url}" target="_blank" style="color:#075e54">${escapeHtml(fileName)}</a>
+        📎 <a href="${docUrl}" target="_blank" style="color:#075e54">${escapeHtml(fileName)}</a>
         <div class="message-time">${timestamp}</div>
       </div>
     `;
@@ -217,20 +254,99 @@ function renderMessageContent(msg) {
   
   // Sticker / GIF
   if (msg.message?.stickerMessage) {
-    const url = msg.message.stickerMessage.url || '';
-    const isAnimated = msg.message.stickerMessage.isAnimated || false;
-    if (isAnimated || url.endsWith('.webp')) {
-      return `
-        <div class="message-media ${dir}">
-          <img src="${url}" alt="GIF/Sticker" style="max-width:150px; border-radius:12px">
-          <div class="message-time">${timestamp}</div>
-        </div>
-      `;
+    const mediaKey = msg.message.stickerMessage.url || msg.message.stickerMessage.directPath;
+    let stickerUrl = '';
+    if (mediaKey) {
+      stickerUrl = await downloadMediaUrl(mediaKey);
     }
-    return `<div class="message ${dir}">🎨 Sticker<div class="message-time">${timestamp}</div></div>`;
+    return `
+      <div class="message-media ${dir}">
+        <img src="${stickerUrl}" alt="Sticker/GIF" style="max-width:150px; border-radius:12px">
+        <div class="message-time">${timestamp}</div>
+      </div>
+    `;
   }
   
   return null;
+}
+
+// Função para gravar áudio do microfone
+async function toggleRecording() {
+  const btn = document.getElementById('audioRecordBtn');
+  
+  if (!isRecording) {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorder = new MediaRecorder(stream);
+      audioChunks = [];
+      
+      mediaRecorder.ondataavailable = event => {
+        audioChunks.push(event.data);
+      };
+      
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunks, { type: 'audio/mp4' });
+        const file = new File([audioBlob], 'audio.mp4', { type: 'audio/mp4' });
+        
+        // Envia o áudio gravado
+        await sendAudioBlob(file);
+        
+        // Para todas as tracks
+        stream.getTracks().forEach(track => track.stop());
+      };
+      
+      mediaRecorder.start();
+      isRecording = true;
+      btn.textContent = '⏹️ Parar Gravação';
+      btn.style.background = '#ff4444';
+      btn.style.color = 'white';
+      showToast('Gravando... Clique em "Parar" quando terminar');
+    } catch(err) {
+      showToast('Erro ao acessar microfone: ' + err.message);
+    }
+  } else {
+    mediaRecorder.stop();
+    isRecording = false;
+    btn.textContent = '🎙️ Gravar Áudio';
+    btn.style.background = '#f0f0f0';
+    btn.style.color = 'black';
+  }
+}
+
+async function sendAudioBlob(audioBlob) {
+  let numberToSend = '';
+  let manualNumber = document.getElementById('manualNumber').value.trim();
+  
+  if (manualNumber) {
+    let cleanNumber = manualNumber.replace(/\D/g, '');
+    if (!cleanNumber.startsWith('55') && cleanNumber.length === 11) cleanNumber = '55' + cleanNumber;
+    numberToSend = cleanNumber;
+  } else if (currentChat) {
+    numberToSend = currentChat.id;
+  } else {
+    showToast('Digite um número ou selecione uma conversa');
+    return;
+  }
+  
+  const reader = new FileReader();
+  reader.onloadend = async function() {
+    const base64 = reader.result.split(',')[1];
+    showToast('Enviando áudio...');
+    
+    try {
+      const encoded = encodeURIComponent(INSTANCE);
+      const response = await fetch(`${BASE_URL}/message/sendWhatsAppAudio/${encoded}`, {
+        method: 'POST',
+        headers: { 'apikey': API_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ number: numberToSend, audio: base64 })
+      });
+      
+      if (!response.ok) throw new Error('Erro ao enviar');
+      showToast('Áudio enviado! ✅');
+      setTimeout(() => { if (currentChat) loadMessages(currentChat.id); }, 2000);
+    } catch(err) { showToast(`Erro: ${err.message}`); }
+  };
+  reader.readAsDataURL(audioBlob);
 }
 
 function formatNumber(num) {
@@ -242,7 +358,6 @@ function formatNumber(num) {
   }
   const c = num.replace(/\D/g, '');
   if (c.length === 11) return `+55 (${c.slice(2,4)}) ${c.slice(4,9)}-${c.slice(9)}`;
-  if (c.startsWith('LID')) return num;
   return c;
 }
 
@@ -269,7 +384,6 @@ async function loadChats() {
   try {
     const encoded = encodeURIComponent(INSTANCE);
     const data = await apiRequest(`/chat/findChats/${encoded}`, 'POST', { where: {} });
-    
     let rawChats = [];
     if (Array.isArray(data)) rawChats = data;
     else if (data?.records) rawChats = data.records;
@@ -375,7 +489,7 @@ async function loadMessages(chatId) {
     
     let html = '';
     for (const m of messages) {
-      const rendered = renderMessageContent(m);
+      const rendered = await renderMessageContent(m);
       if (rendered) html += rendered;
     }
     document.getElementById('messagesArea').innerHTML = html;
@@ -459,11 +573,6 @@ async function sendMedia(input, type) {
       const encoded = encodeURIComponent(INSTANCE);
       let endpoint = `/message/sendMedia/${encoded}`;
       let body = { number: numberToSend, media: base64, mimetype: file.type, fileName: file.name, caption: '' };
-      
-      if (type === 'audio') {
-        endpoint = `/message/sendWhatsAppAudio/${encoded}`;
-        body = { number: numberToSend, audio: base64 };
-      }
       
       const response = await fetch(`${BASE_URL}${endpoint}`, {
         method: 'POST',
