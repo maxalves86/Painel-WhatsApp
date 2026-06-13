@@ -141,13 +141,14 @@ async function loadChats() {
       const remoteJid = chat.remoteJid || chat.id || chat.jid;
       if (!remoteJid) continue;
       
-      let number = remoteJid.split('@')[0].replace(/\D/g, '');
-      let name = chat.pushName || chat.name || chat.senderName || number;
+      // CORREÇÃO: Usa o remoteJid COMPLETO para responder
+      let number = remoteJid; // Mantém o JID completo
+      let name = chat.pushName || chat.name || chat.senderName || remoteJid.split('@')[0];
       
       if (!uniqueChats.has(remoteJid)) {
         uniqueChats.set(remoteJid, { 
           id: remoteJid, 
-          number: number, 
+          number: number,  // Agora é o JID completo (funciona para responder)
           name: name 
         });
       }
@@ -160,6 +161,12 @@ async function loadChats() {
 
 function formatNumber(num) {
   if (!num) return '';
+  // Se for um JID, mostra de forma amigável
+  if (num.includes('@')) {
+    const clean = num.split('@')[0];
+    if (clean.length === 11) return `+55 (${clean.slice(2,4)}) ${clean.slice(4,9)}-${clean.slice(9)}`;
+    return clean;
+  }
   const c = num.replace(/\D/g, '');
   if (c.length === 11) return `+55 (${c.slice(2,4)}) ${c.slice(4,9)}-${c.slice(9)}`;
   return c;
@@ -186,7 +193,7 @@ function renderChatList() {
       <div class="avatar" style="background:${bg}">${c.name.substring(0,2).toUpperCase()}</div>
       <div class="conv-info">
         <div class="conv-name">${escapeHtml(c.name)}</div>
-        <div class="conv-number">${formatNumber(c.number)}</div>
+        <div class="conv-number">${escapeHtml(formatNumber(c.number))}</div>
         <div style="margin-top:4px"><span class="badge ${sc}">${st}</span></div>
       </div>
     </div>`;
@@ -202,7 +209,7 @@ async function selectChat(id) {
   if (!chat) return;
   currentChat = chat;
   document.getElementById('chatHeader').style.display = 'flex';
-  document.getElementById('inputArea').style.display = 'flex';
+  document.getElementById('inputArea').style.display = 'block';
   document.getElementById('chatName').textContent = chat.name;
   document.getElementById('chatNumber').textContent = formatNumber(chat.number);
   document.getElementById('detailName').textContent = chat.name;
@@ -210,9 +217,8 @@ async function selectChat(id) {
   document.getElementById('headerAvatar').style.background = getColor(chat.id);
   document.getElementById('headerAvatar').textContent = chat.name.substring(0,2).toUpperCase();
   
-  if (chat.number && chat.number.length >= 10) {
-    document.getElementById('manualNumber').value = chat.number;
-  }
+  // Limpa o campo manual para evitar confusão
+  document.getElementById('manualNumber').value = '';
   
   document.getElementById('messagesArea').innerHTML = '<div class="loading"><div class="spin"></div><br>Carregando...</div>';
   await loadMessages(chat.id);
@@ -250,44 +256,43 @@ async function loadMessages(chatId) {
   } catch(err) { console.error(err); }
 }
 
+// FUNÇÃO DE ENVIO CORRIGIDA - Conforme documentação da Evolution API
 async function sendMessage() {
   const input = document.getElementById('messageInput');
   const text = input.value.trim();
   if (!text) { showToast('Digite uma mensagem'); return; }
   
-  let recipient = '';
-  let recipientType = 'number';
+  let numberToSend = '';
   let manualNumber = document.getElementById('manualNumber').value.trim();
   
-  // PRIORIDADE: número manual
+  // PRIORIDADE 1: Número digitado manualmente (para iniciar nova conversa)
   if (manualNumber) {
-    recipient = manualNumber.replace(/\D/g, '');
-    if (!recipient.startsWith('55') && recipient.length === 11) {
-      recipient = '55' + recipient;
+    let cleanNumber = manualNumber.replace(/\D/g, '');
+    if (!cleanNumber.startsWith('55') && cleanNumber.length === 11) {
+      cleanNumber = '55' + cleanNumber;
     }
-    recipientType = 'number';
-    console.log('📤 Enviando para número manual:', recipient);
+    numberToSend = cleanNumber;
+    console.log('📤 Enviando para número manual:', numberToSend);
   } 
-  // SE NÃO TIVER MANUAL, USA O CHAT SELECIONADO (LID)
+  // PRIORIDADE 2: Conversa selecionada (usando o remoteJid completo)
   else if (currentChat) {
-    recipient = currentChat.id;
-    recipientType = 'jid';
-    console.log('📤 Enviando para JID/LID:', recipient);
+    numberToSend = currentChat.id; // Envia o JID completo (funciona!)
+    console.log('📤 Enviando para JID da conversa:', numberToSend);
   } 
   else {
-    showToast('Digite um número no campo acima');
+    showToast('Digite um número ou selecione uma conversa');
     return;
   }
   
   try {
     const encoded = encodeURIComponent(INSTANCE);
-    let body = {};
+    const body = { 
+      number: numberToSend, 
+      text: text, 
+      delay: 1200 
+    };
     
-    if (recipientType === 'jid') {
-      body = { jid: recipient, text: text, delay: 1200 };
-    } else {
-      body = { number: recipient, text: text, delay: 1200 };
-    }
+    console.log('📦 Body enviado:', body);
     
     const response = await fetch(`${BASE_URL}/message/sendText/${encoded}`, {
       method: 'POST',
@@ -310,6 +315,7 @@ async function sendMessage() {
     container.innerHTML += `<div class="message out">${escapeHtml(text)}</div>`;
     setTimeout(scrollToBottom, 100);
     
+    // Recarrega mensagens e chats
     setTimeout(() => loadChats(), 2000);
     if (currentChat) setTimeout(() => loadMessages(currentChat.id), 2000);
   } catch(err) { 
