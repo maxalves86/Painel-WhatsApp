@@ -35,12 +35,21 @@ body{font-family:'Segoe UI',sans-serif;background:#f0f2f5;height:100vh;overflow:
 .status-buttons{display:flex;gap:8px}
 .status-btn{padding:6px 12px;border:1px solid #ddd;border-radius:20px;cursor:pointer;background:#fff;font-size:11px}
 .messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:8px}
-.message{max-width:70%;padding:8px 12px;border-radius:12px;font-size:13px}
+.message{max-width:70%;padding:8px 12px;border-radius:12px;font-size:13px;position:relative}
 .message.out{background:#dcf8c6;align-self:flex-end}
 .message.in{background:#fff;align-self:flex-start;border:1px solid #ddd}
+.message-time{font-size:9px;color:#999;margin-top:4px;text-align:right}
+.message-media{max-width:70%;margin:4px 0}
+.message-media.out{align-self:flex-end}
+.message-media.in{align-self:flex-start}
+.message-media img{max-width:100%;border-radius:12px;cursor:pointer;max-height:300px}
+.message-media audio{width:250px;border-radius:12px}
+.message-media video{max-width:100%;border-radius:12px}
 .input-area{padding:12px;background:#fff;border-top:1px solid #ddd}
 .number-input-area{margin-bottom:10px}
 .number-input-area input{width:100%;padding:10px;border:1px solid #ddd;border-radius:20px;font-size:14px;background:#f8f8f8}
+.input-tools{display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+.tool-btn{background:#f0f0f0;border:none;padding:6px 12px;border-radius:20px;cursor:pointer;font-size:12px}
 .input-row{display:flex;gap:8px}
 .input-row textarea{flex:1;padding:10px;border:1px solid #ddd;border-radius:20px;resize:none;font-family:inherit;font-size:14px}
 .input-row button{background:#075e54;color:#fff;border:none;border-radius:20px;padding:0 20px;cursor:pointer;font-weight:bold}
@@ -52,6 +61,7 @@ body{font-family:'Segoe UI',sans-serif;background:#f0f2f5;height:100vh;overflow:
 @keyframes spin{to{transform:rotate(360deg)}}
 .toast{position:fixed;bottom:20px;right:20px;background:#333;color:#fff;padding:10px 16px;border-radius:8px;z-index:1000;opacity:0;transition:opacity 0.3s}
 .toast.show{opacity:1}
+.file-input{display:none}
 </style>
 </head>
 <body>
@@ -83,11 +93,17 @@ body{font-family:'Segoe UI',sans-serif;background:#f0f2f5;height:100vh;overflow:
       <div class="number-input-area">
         <input type="text" id="manualNumber" placeholder="📱 Digite o número do WhatsApp (ex: 5511988887777)">
       </div>
+      <div class="input-tools">
+        <button class="tool-btn" onclick="document.getElementById('imageInput').click()">📷 Imagem</button>
+        <button class="tool-btn" onclick="document.getElementById('audioInput').click()">🎵 Áudio</button>
+      </div>
       <div class="input-row">
         <textarea id="messageInput" placeholder="Digite sua mensagem..." rows="2" onkeydown="if(event.key=='Enter'&&!event.shiftKey){event.preventDefault();sendMessage()}"></textarea>
         <button onclick="sendMessage()">Enviar 📤</button>
       </div>
     </div>
+    <input type="file" id="imageInput" accept="image/*" style="display:none" onchange="sendMedia(this, 'image')">
+    <input type="file" id="audioInput" accept="audio/*" style="display:none" onchange="sendMedia(this, 'audio')">
   </div>
   <div class="right-panel">
     <h4>📋 Detalhes</h4>
@@ -126,88 +142,95 @@ async function apiRequest(endpoint, method = 'POST', body = null) {
   return data;
 }
 
-// Função para tentar extrair número real de um LID
-async function resolveLIDtoNumber(lid) {
-  try {
-    const encoded = encodeURIComponent(INSTANCE);
-    const response = await fetch(`${BASE_URL}/contact/findContacts/${encoded}`, {
-      method: 'POST',
-      headers: { 'apikey': API_KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ where: { remoteJid: lid } })
-    });
-    const data = await response.json();
-    
-    if (data && data.length > 0 && data[0].id) {
-      const number = data[0].id.split('@')[0];
-      const name = data[0].pushName || data[0].name || number;
-      return { number, name };
-    }
-    return null;
-  } catch(err) {
-    console.error('Erro ao resolver LID:', err);
-    return null;
+function formatTimestamp(timestamp) {
+  if (!timestamp) return '';
+  const date = new Date(timestamp * 1000);
+  const now = new Date();
+  const isToday = date.toDateString() === now.toDateString();
+  
+  if (isToday) {
+    return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  } else {
+    return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
   }
 }
 
-async function loadChats() {
-  try {
-    const encoded = encodeURIComponent(INSTANCE);
-    const data = await apiRequest(`/chat/findChats/${encoded}`, 'POST', { where: {} });
-    
-    let rawChats = [];
-    if (Array.isArray(data)) rawChats = data;
-    else if (data?.records) rawChats = data.records;
-    else if (data?.chats) rawChats = data.chats;
-    
-    const uniqueChats = new Map();
-    
-    for (const chat of rawChats) {
-      const remoteJid = chat.remoteJid || chat.id || chat.jid;
-      if (!remoteJid) continue;
-      
-      let displayNumber = '';
-      let displayName = '';
-      
-      // 1ª tentativa: remoteJidAlt (número real)
-      if (chat.lastMessage?.key?.remoteJidAlt) {
-        displayNumber = chat.lastMessage.key.remoteJidAlt.split('@')[0];
-        displayName = chat.pushName || chat.name || chat.senderName || displayNumber;
-        console.log('✅ Número via remoteJidAlt:', displayNumber);
-      }
-      // 2ª tentativa: JID normal (@s.whatsapp.net)
-      else if (remoteJid.includes('@s.whatsapp.net') || remoteJid.includes('@c.us')) {
-        displayNumber = remoteJid.split('@')[0];
-        displayName = chat.pushName || chat.name || chat.senderName || displayNumber;
-        console.log('✅ Número via remoteJid:', displayNumber);
-      }
-      // 3ª tentativa: LID - tenta resolver
-      else if (remoteJid.includes('@lid')) {
-        const resolved = await resolveLIDtoNumber(remoteJid);
-        if (resolved && resolved.number) {
-          displayNumber = resolved.number;
-          displayName = resolved.name || displayNumber;
-          console.log('✅ LID resolvido:', displayNumber);
-        } else {
-          const lidShort = remoteJid.split('@')[0].slice(-8);
-          displayNumber = `LID:...${lidShort}`;
-          displayName = chat.pushName || chat.name || `Contato ${lidShort}`;
-          console.log('⚠️ LID não resolvido:', lidShort);
-        }
-      }
-      
-      if (!uniqueChats.has(remoteJid)) {
-        uniqueChats.set(remoteJid, { 
-          id: remoteJid, 
-          number: displayNumber, 
-          name: displayName
-        });
-      }
+function renderMessageContent(msg) {
+  const isFromMe = msg.key?.fromMe === true || msg.fromMe === true;
+  const dir = isFromMe ? 'out' : 'in';
+  const timestamp = formatTimestamp(msg.messageTimestamp || msg.timestamp);
+  
+  // Mensagem de texto
+  let text = msg.message?.conversation || msg.message?.extendedTextMessage?.text || msg.text || msg.body || msg.content;
+  if (text) {
+    return `<div class="message ${dir}">${escapeHtml(text)}<div class="message-time">${timestamp}</div></div>`;
+  }
+  
+  // Imagem
+  if (msg.message?.imageMessage) {
+    const caption = msg.message.imageMessage.caption || '';
+    const url = msg.message.imageMessage.url || '';
+    return `
+      <div class="message-media ${dir}">
+        ${caption ? `<div class="message ${dir}" style="margin-bottom:4px">${escapeHtml(caption)}</div>` : ''}
+        ${url ? `<img src="${url}" alt="Imagem" onclick="window.open('${url}')">` : '📷 Imagem'}
+        <div class="message-time">${timestamp}</div>
+      </div>
+    `;
+  }
+  
+  // Áudio
+  if (msg.message?.audioMessage) {
+    const url = msg.message.audioMessage.url || '';
+    return `
+      <div class="message-media ${dir}">
+        <audio controls src="${url}"></audio>
+        <div class="message-time">${timestamp}</div>
+      </div>
+    `;
+  }
+  
+  // Vídeo
+  if (msg.message?.videoMessage) {
+    const url = msg.message.videoMessage.url || '';
+    const caption = msg.message.videoMessage.caption || '';
+    return `
+      <div class="message-media ${dir}">
+        ${caption ? `<div class="message ${dir}" style="margin-bottom:4px">${escapeHtml(caption)}</div>` : ''}
+        <video controls src="${url}"></video>
+        <div class="message-time">${timestamp}</div>
+      </div>
+    `;
+  }
+  
+  // Documento
+  if (msg.message?.documentMessage) {
+    const fileName = msg.message.documentMessage.fileName || 'Documento';
+    const url = msg.message.documentMessage.url || '';
+    return `
+      <div class="message ${dir}">
+        📎 <a href="${url}" target="_blank" style="color:#075e54">${escapeHtml(fileName)}</a>
+        <div class="message-time">${timestamp}</div>
+      </div>
+    `;
+  }
+  
+  // Sticker / GIF
+  if (msg.message?.stickerMessage) {
+    const url = msg.message.stickerMessage.url || '';
+    const isAnimated = msg.message.stickerMessage.isAnimated || false;
+    if (isAnimated || url.endsWith('.webp')) {
+      return `
+        <div class="message-media ${dir}">
+          <img src="${url}" alt="GIF/Sticker" style="max-width:150px; border-radius:12px">
+          <div class="message-time">${timestamp}</div>
+        </div>
+      `;
     }
-    
-    chats = Array.from(uniqueChats.values());
-    console.log('Chats carregados:', chats.length);
-    renderChatList();
-  } catch(err) { console.error(err); }
+    return `<div class="message ${dir}">🎨 Sticker<div class="message-time">${timestamp}</div></div>`;
+  }
+  
+  return null;
 }
 
 function formatNumber(num) {
@@ -221,6 +244,67 @@ function formatNumber(num) {
   if (c.length === 11) return `+55 (${c.slice(2,4)}) ${c.slice(4,9)}-${c.slice(9)}`;
   if (c.startsWith('LID')) return num;
   return c;
+}
+
+function escapeHtml(t) { if(!t) return ''; const d=document.createElement('div'); d.textContent=t; return d.innerHTML; }
+function getColor(str) { let h=0; for(let i=0;i<str.length;i++) h=((h<<5)-h)+str.charCodeAt(i); const colors=['#9FE1CB','#B5D4F4','#FAC775','#F4C0D1','#D4E0FF']; return colors[Math.abs(h)%colors.length]; }
+
+async function resolveLIDtoNumber(lid) {
+  try {
+    const encoded = encodeURIComponent(INSTANCE);
+    const response = await fetch(`${BASE_URL}/contact/findContacts/${encoded}`, {
+      method: 'POST',
+      headers: { 'apikey': API_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ where: { remoteJid: lid } })
+    });
+    const data = await response.json();
+    if (data && data.length > 0 && data[0].id) {
+      return { number: data[0].id.split('@')[0], name: data[0].pushName || data[0].name };
+    }
+    return null;
+  } catch(err) { return null; }
+}
+
+async function loadChats() {
+  try {
+    const encoded = encodeURIComponent(INSTANCE);
+    const data = await apiRequest(`/chat/findChats/${encoded}`, 'POST', { where: {} });
+    
+    let rawChats = [];
+    if (Array.isArray(data)) rawChats = data;
+    else if (data?.records) rawChats = data.records;
+    else if (data?.chats) rawChats = data.chats;
+    
+    const uniqueChats = new Map();
+    for (const chat of rawChats) {
+      const remoteJid = chat.remoteJid || chat.id || chat.jid;
+      if (!remoteJid) continue;
+      let displayNumber = '', displayName = '';
+      
+      if (chat.lastMessage?.key?.remoteJidAlt) {
+        displayNumber = chat.lastMessage.key.remoteJidAlt.split('@')[0];
+        displayName = chat.pushName || chat.name || chat.senderName || displayNumber;
+      } else if (remoteJid.includes('@s.whatsapp.net') || remoteJid.includes('@c.us')) {
+        displayNumber = remoteJid.split('@')[0];
+        displayName = chat.pushName || chat.name || chat.senderName || displayNumber;
+      } else if (remoteJid.includes('@lid')) {
+        const resolved = await resolveLIDtoNumber(remoteJid);
+        if (resolved && resolved.number) {
+          displayNumber = resolved.number;
+          displayName = resolved.name || displayNumber;
+        } else {
+          displayNumber = remoteJid.split('@')[0].slice(-8);
+          displayName = chat.pushName || chat.name || `Contato ${displayNumber}`;
+        }
+      }
+      
+      if (!uniqueChats.has(remoteJid)) {
+        uniqueChats.set(remoteJid, { id: remoteJid, number: displayNumber, name: displayName });
+      }
+    }
+    chats = Array.from(uniqueChats.values());
+    renderChatList();
+  } catch(err) { console.error(err); }
 }
 
 function renderChatList() {
@@ -240,22 +324,17 @@ function renderChatList() {
     const st = s === 'em_atendimento' ? 'Ativo' : 'Pendente';
     const bg = getColor(c.id);
     const active = currentChat?.id === c.id ? 'active' : '';
-    const displayNumber = formatNumber(c.number);
-    
     html += `<div class="conv-item ${active}" onclick="selectChat('${c.id.replace(/'/g,"\\'")}')">
       <div class="avatar" style="background:${bg}">${c.name.substring(0,2).toUpperCase()}</div>
       <div class="conv-info">
         <div class="conv-name">${escapeHtml(c.name)}</div>
-        <div class="conv-number">${escapeHtml(displayNumber)}</div>
+        <div class="conv-number">${escapeHtml(formatNumber(c.number))}</div>
         <div style="margin-top:4px"><span class="badge ${sc}">${st}</span></div>
       </div>
     </div>`;
   }
   container.innerHTML = html;
 }
-
-function getColor(str) { let h=0; for(let i=0;i<str.length;i++) h=((h<<5)-h)+str.charCodeAt(i); const colors=['#9FE1CB','#B5D4F4','#FAC775','#F4C0D1','#D4E0FF']; return colors[Math.abs(h)%colors.length]; }
-function escapeHtml(t) { if(!t) return ''; const d=document.createElement('div'); d.textContent=t; return d.innerHTML; }
 
 async function selectChat(id) {
   const chat = chats.find(c => c.id === id);
@@ -269,7 +348,6 @@ async function selectChat(id) {
   document.getElementById('detailNumber').textContent = formatNumber(chat.number);
   document.getElementById('headerAvatar').style.background = getColor(chat.id);
   document.getElementById('headerAvatar').textContent = chat.name.substring(0,2).toUpperCase();
-  
   document.getElementById('manualNumber').value = '';
   document.getElementById('messagesArea').innerHTML = '<div class="loading"><div class="spin"></div><br>Carregando...</div>';
   await loadMessages(chat.id);
@@ -297,10 +375,8 @@ async function loadMessages(chatId) {
     
     let html = '';
     for (const m of messages) {
-      const isFromMe = m.key?.fromMe === true || m.fromMe === true;
-      const dir = isFromMe ? 'out' : 'in';
-      let text = m.message?.conversation || m.message?.extendedTextMessage?.text || m.text || m.body;
-      if (text) html += `<div class="message ${dir}">${escapeHtml(text)}</div>`;
+      const rendered = renderMessageContent(m);
+      if (rendered) html += rendered;
     }
     document.getElementById('messagesArea').innerHTML = html;
     setTimeout(scrollToBottom, 100);
@@ -317,50 +393,91 @@ async function sendMessage() {
   
   if (manualNumber) {
     let cleanNumber = manualNumber.replace(/\D/g, '');
-    if (!cleanNumber.startsWith('55') && cleanNumber.length === 11) {
-      cleanNumber = '55' + cleanNumber;
-    }
+    if (!cleanNumber.startsWith('55') && cleanNumber.length === 11) cleanNumber = '55' + cleanNumber;
     numberToSend = cleanNumber;
-    console.log('📤 Enviando para número manual:', numberToSend);
-  } 
-  else if (currentChat) {
+  } else if (currentChat) {
     numberToSend = currentChat.id;
-    console.log('📤 Enviando para JID da conversa:', numberToSend);
-  } 
-  else {
+  } else {
     showToast('Digite um número ou selecione uma conversa');
     return;
   }
   
   try {
     const encoded = encodeURIComponent(INSTANCE);
-    const body = { number: numberToSend, text: text, delay: 1200 };
-    
     const response = await fetch(`${BASE_URL}/message/sendText/${encoded}`, {
       method: 'POST',
       headers: { 'apikey': API_KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
+      body: JSON.stringify({ number: numberToSend, text: text, delay: 1200 })
     });
     
-    const result = await response.json();
-    if (!response.ok) throw new Error(result.message || result.error || 'Erro');
+    if (!response.ok) throw new Error('Erro ao enviar');
     
     input.value = '';
     showToast('Mensagem enviada! ✅');
     
+    const timestamp = formatTimestamp(Math.floor(Date.now() / 1000));
     const container = document.getElementById('messagesArea');
-    if (container.innerHTML.includes('Nenhuma mensagem') || container.innerHTML.includes('Selecione')) {
-      container.innerHTML = '';
-    }
-    container.innerHTML += `<div class="message out">${escapeHtml(text)}</div>`;
+    if (container.innerHTML.includes('Nenhuma mensagem')) container.innerHTML = '';
+    container.innerHTML += `<div class="message out">${escapeHtml(text)}<div class="message-time">${timestamp}</div></div>`;
     setTimeout(scrollToBottom, 100);
     
     setTimeout(() => loadChats(), 2000);
     if (currentChat) setTimeout(() => loadMessages(currentChat.id), 2000);
-  } catch(err) { 
-    console.error('❌ Erro:', err);
-    showToast(`Erro: ${err.message}`); 
+  } catch(err) { showToast(`Erro: ${err.message}`); }
+}
+
+async function sendMedia(input, type) {
+  if (!currentChat && !document.getElementById('manualNumber').value.trim()) {
+    showToast('Selecione uma conversa ou digite um número');
+    input.value = '';
+    return;
   }
+  
+  const file = input.files[0];
+  if (!file) return;
+  showToast(`Enviando ${type}...`);
+  
+  const reader = new FileReader();
+  reader.onloadend = async function() {
+    const base64 = reader.result.split(',')[1];
+    let numberToSend = '';
+    let manualNumber = document.getElementById('manualNumber').value.trim();
+    
+    if (manualNumber) {
+      let cleanNumber = manualNumber.replace(/\D/g, '');
+      if (!cleanNumber.startsWith('55') && cleanNumber.length === 11) cleanNumber = '55' + cleanNumber;
+      numberToSend = cleanNumber;
+    } else if (currentChat) {
+      numberToSend = currentChat.id;
+    } else {
+      showToast('Digite um número ou selecione uma conversa');
+      input.value = '';
+      return;
+    }
+    
+    try {
+      const encoded = encodeURIComponent(INSTANCE);
+      let endpoint = `/message/sendMedia/${encoded}`;
+      let body = { number: numberToSend, media: base64, mimetype: file.type, fileName: file.name, caption: '' };
+      
+      if (type === 'audio') {
+        endpoint = `/message/sendWhatsAppAudio/${encoded}`;
+        body = { number: numberToSend, audio: base64 };
+      }
+      
+      const response = await fetch(`${BASE_URL}${endpoint}`, {
+        method: 'POST',
+        headers: { 'apikey': API_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      
+      if (!response.ok) throw new Error('Erro ao enviar');
+      showToast(`${type} enviado! ✅`);
+      input.value = '';
+      setTimeout(() => { if (currentChat) loadMessages(currentChat.id); }, 2000);
+    } catch(err) { showToast(`Erro: ${err.message}`); input.value = ''; }
+  };
+  reader.readAsDataURL(file);
 }
 
 function updateStatus(s) {
