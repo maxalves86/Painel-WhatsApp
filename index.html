@@ -121,6 +121,30 @@ async function apiRequest(endpoint, method = 'POST', body = null) {
   return data;
 }
 
+// FUNÇÃO CORRIGIDA: Extrai o número REAL do WhatsApp
+function extractRealNumber(chat) {
+  // 1ª tentativa: remoteJidAlt (tem o número verdadeiro)
+  if (chat.lastMessage?.key?.remoteJidAlt) {
+    const altJid = chat.lastMessage.key.remoteJidAlt;
+    const number = altJid.split('@')[0].replace(/\D/g, '');
+    console.log('📱 Número real via remoteJidAlt:', number);
+    return number;
+  }
+  
+  // 2ª tentativa: remoteJid normal se for @s.whatsapp.net
+  const remoteJid = chat.remoteJid || chat.id || chat.jid;
+  if (remoteJid && (remoteJid.includes('@s.whatsapp.net') || remoteJid.includes('@c.us'))) {
+    const number = remoteJid.split('@')[0].replace(/\D/g, '');
+    console.log('📱 Número real via remoteJid:', number);
+    return number;
+  }
+  
+  // 3ª tentativa: Se for LID, tenta extrair de outra forma
+  const number = remoteJid?.split('@')[0].replace(/\D/g, '') || '';
+  console.log('⚠️ Usando número do LID:', number);
+  return number;
+}
+
 async function loadChats() {
   try {
     const encoded = encodeURIComponent(INSTANCE);
@@ -135,17 +159,23 @@ async function loadChats() {
     for (const chat of rawChats) {
       const remoteJid = chat.remoteJid || chat.id || chat.jid;
       if (!remoteJid) continue;
+      
+      // CORREÇÃO: Extrai o número REAL usando a função
+      const realNumber = extractRealNumber(chat);
+      const name = chat.pushName || chat.name || chat.senderName || formatNumber(realNumber);
+      
       if (!uniqueChats.has(remoteJid)) {
-        let number = remoteJid.split('@')[0].replace(/\D/g, '');
-        let name = chat.pushName || chat.name || chat.senderName || number;
-        if (name === 'null' || name === number) name = formatNumber(number);
-        uniqueChats.set(remoteJid, { id: remoteJid, number: number, name: name });
+        uniqueChats.set(remoteJid, { 
+          id: remoteJid, 
+          number: realNumber,  // Agora é o número REAL!
+          name: name 
+        });
       }
     }
     chats = Array.from(uniqueChats.values());
-    console.log('Chats carregados:', chats.length);
+    console.log('Chats carregados:', chats);
     renderChatList();
-    if(chats.length === 0) showToast('Nenhuma conversa. Envie uma mensagem para começar!');
+    if(chats.length === 0) showToast('Nenhuma conversa');
   } catch(err) { console.error(err); showToast(`Erro: ${err.message}`); }
 }
 
@@ -153,6 +183,7 @@ function formatNumber(num) {
   if (!num) return '';
   const c = num.replace(/\D/g, '');
   if (c.length === 11) return `+55 (${c.slice(2,4)}) ${c.slice(4,9)}-${c.slice(9)}`;
+  if (c.length === 13 && c.startsWith('55')) return `+55 (${c.slice(2,4)}) ${c.slice(4,9)}-${c.slice(9,13)}`;
   return c;
 }
 
@@ -233,13 +264,14 @@ async function sendMessage() {
   const text = input.value.trim();
   if (!text) return;
   
-  // CORREÇÃO: Extrai apenas números e adiciona 55 se necessário
+  // CORREÇÃO: Usa o número REAL que extraímos
   let cleanNumber = currentChat.number.replace(/\D/g, '');
   if (!cleanNumber.startsWith('55') && cleanNumber.length === 11) {
     cleanNumber = '55' + cleanNumber;
   }
   
-  console.log('Enviando para:', cleanNumber);
+  console.log('📤 Enviando mensagem para:', cleanNumber);
+  console.log('📝 Mensagem:', text);
   
   try {
     const encoded = encodeURIComponent(INSTANCE);
@@ -250,11 +282,14 @@ async function sendMessage() {
     });
     
     const result = await response.json();
-    if (!response.ok) throw new Error(result.message || result.error);
+    console.log('📥 Resposta da API:', result);
+    
+    if (!response.ok) throw new Error(result.message || result.error || 'Erro ao enviar');
     
     input.value = '';
     showToast('Mensagem enviada! ✅');
     
+    // Adiciona mensagem na tela imediatamente
     const container = document.getElementById('messagesArea');
     if (container.innerHTML.includes('Nenhuma')) container.innerHTML = '';
     container.innerHTML += `<div class="message out">${escapeHtml(text)}</div>`;
@@ -263,7 +298,7 @@ async function sendMessage() {
     setTimeout(() => loadMessages(currentChat.id), 2000);
     setTimeout(() => loadChats(), 3000);
   } catch(err) { 
-    console.error(err);
+    console.error('❌ Erro detalhado:', err);
     showToast(`Erro: ${err.message}`); 
   }
 }
