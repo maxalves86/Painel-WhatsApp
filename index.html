@@ -80,7 +80,6 @@ body{font-family:'Segoe UI',sans-serif;background:#f0f2f5;height:100vh;overflow:
     </div>
     <div class="messages" id="messagesArea"><div class="empty-state">💬 Selecione uma conversa</div></div>
     <div class="input-area" id="inputArea" style="display:none">
-      <!-- Campo de número no TOPO (antes da mensagem) -->
       <div class="number-input-area">
         <input type="text" id="manualNumber" placeholder="📱 Digite o número do WhatsApp (ex: 5511988887777)">
       </div>
@@ -211,7 +210,6 @@ async function selectChat(id) {
   document.getElementById('headerAvatar').style.background = getColor(chat.id);
   document.getElementById('headerAvatar').textContent = chat.name.substring(0,2).toUpperCase();
   
-  // Preenche o campo manual com o número do chat
   if (chat.number && chat.number.length >= 10) {
     document.getElementById('manualNumber').value = chat.number;
   }
@@ -221,7 +219,6 @@ async function selectChat(id) {
   renderChatList();
 }
 
-// Função para rolar para o final das mensagens
 function scrollToBottom() {
   const messagesDiv = document.getElementById('messagesArea');
   messagesDiv.scrollTop = messagesDiv.scrollHeight;
@@ -249,8 +246,6 @@ async function loadMessages(chatId) {
       if (text) html += `<div class="message ${dir}">${escapeHtml(text)}</div>`;
     }
     document.getElementById('messagesArea').innerHTML = html;
-    
-    // CORREÇÃO: Rola para o FINAL (última mensagem)
     setTimeout(scrollToBottom, 100);
   } catch(err) { console.error(err); }
 }
@@ -260,43 +255,74 @@ async function sendMessage() {
   const text = input.value.trim();
   if (!text) { showToast('Digite uma mensagem'); return; }
   
-  let cleanNumber = document.getElementById('manualNumber').value.trim();
+  let recipient = '';
+  let recipientType = 'number';
   
-  if (!cleanNumber) {
-    showToast('Digite um número no campo acima (ex: 5511988887777)');
+  // PRIORIDADE 1: Número digitado manualmente
+  let manualNumber = document.getElementById('manualNumber').value.trim();
+  
+  if (manualNumber) {
+    recipient = manualNumber.replace(/\D/g, '');
+    if (!recipient.startsWith('55') && recipient.length === 11) {
+      recipient = '55' + recipient;
+    }
+    recipientType = 'number';
+    console.log('📤 Enviando para número manual:', recipient);
+  } 
+  else if (currentChat) {
+    // PRIORIDADE 2: Usa o JID da conversa (pode ser LID)
+    recipient = currentChat.id;
+    recipientType = 'jid';
+    console.log('📤 Enviando para JID/LID:', recipient);
+  } 
+  else {
+    showToast('Digite um número no campo acima ou selecione uma conversa');
     return;
   }
   
-  cleanNumber = cleanNumber.replace(/\D/g, '');
-  if (!cleanNumber.startsWith('55') && cleanNumber.length === 11) {
-    cleanNumber = '55' + cleanNumber;
-  }
-  
-  console.log('📤 Enviando para:', cleanNumber);
-  
   try {
     const encoded = encodeURIComponent(INSTANCE);
+    let body = {};
+    
+    if (recipientType === 'jid') {
+      body = { 
+        number: recipient, 
+        text: text, 
+        delay: 1200 
+      };
+    } else {
+      body = { 
+        number: recipient, 
+        text: text, 
+        delay: 1200 
+      };
+    }
+    
     const response = await fetch(`${BASE_URL}/message/sendText/${encoded}`, {
       method: 'POST',
       headers: { 'apikey': API_KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ number: cleanNumber, text: text, delay: 1200 })
+      body: JSON.stringify(body)
     });
     
     const result = await response.json();
-    if (!response.ok) throw new Error(result.message || result.error);
+    console.log('📥 Resposta:', result);
+    
+    if (!response.ok) throw new Error(result.message || result.error || 'Erro');
     
     input.value = '';
     showToast('Mensagem enviada! ✅');
     
-    // Adiciona mensagem na tela e ROLA PARA O FINAL
     const container = document.getElementById('messagesArea');
-    if (container.innerHTML.includes('Nenhuma mensagem')) container.innerHTML = '';
+    if (container.innerHTML.includes('Nenhuma mensagem') || container.innerHTML.includes('Selecione')) {
+      container.innerHTML = '';
+    }
     container.innerHTML += `<div class="message out">${escapeHtml(text)}</div>`;
-    scrollToBottom();
+    setTimeout(scrollToBottom, 100);
     
     setTimeout(() => loadChats(), 2000);
+    if (currentChat) setTimeout(() => loadMessages(currentChat.id), 2000);
   } catch(err) { 
-    console.error(err);
+    console.error('❌ Erro:', err);
     showToast(`Erro: ${err.message}`); 
   }
 }
