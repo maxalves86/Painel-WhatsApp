@@ -126,6 +126,29 @@ async function apiRequest(endpoint, method = 'POST', body = null) {
   return data;
 }
 
+// Função para tentar extrair número real de um LID
+async function resolveLIDtoNumber(lid) {
+  try {
+    const encoded = encodeURIComponent(INSTANCE);
+    const response = await fetch(`${BASE_URL}/contact/findContacts/${encoded}`, {
+      method: 'POST',
+      headers: { 'apikey': API_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ where: { remoteJid: lid } })
+    });
+    const data = await response.json();
+    
+    if (data && data.length > 0 && data[0].id) {
+      const number = data[0].id.split('@')[0];
+      const name = data[0].pushName || data[0].name || number;
+      return { number, name };
+    }
+    return null;
+  } catch(err) {
+    console.error('Erro ao resolver LID:', err);
+    return null;
+  }
+}
+
 async function loadChats() {
   try {
     const encoded = encodeURIComponent(INSTANCE);
@@ -137,22 +160,50 @@ async function loadChats() {
     else if (data?.chats) rawChats = data.chats;
     
     const uniqueChats = new Map();
+    
     for (const chat of rawChats) {
       const remoteJid = chat.remoteJid || chat.id || chat.jid;
       if (!remoteJid) continue;
       
-      // CORREÇÃO: Usa o remoteJid COMPLETO para responder
-      let number = remoteJid; // Mantém o JID completo
-      let name = chat.pushName || chat.name || chat.senderName || remoteJid.split('@')[0];
+      let displayNumber = '';
+      let displayName = '';
+      
+      // 1ª tentativa: remoteJidAlt (número real)
+      if (chat.lastMessage?.key?.remoteJidAlt) {
+        displayNumber = chat.lastMessage.key.remoteJidAlt.split('@')[0];
+        displayName = chat.pushName || chat.name || chat.senderName || displayNumber;
+        console.log('✅ Número via remoteJidAlt:', displayNumber);
+      }
+      // 2ª tentativa: JID normal (@s.whatsapp.net)
+      else if (remoteJid.includes('@s.whatsapp.net') || remoteJid.includes('@c.us')) {
+        displayNumber = remoteJid.split('@')[0];
+        displayName = chat.pushName || chat.name || chat.senderName || displayNumber;
+        console.log('✅ Número via remoteJid:', displayNumber);
+      }
+      // 3ª tentativa: LID - tenta resolver
+      else if (remoteJid.includes('@lid')) {
+        const resolved = await resolveLIDtoNumber(remoteJid);
+        if (resolved && resolved.number) {
+          displayNumber = resolved.number;
+          displayName = resolved.name || displayNumber;
+          console.log('✅ LID resolvido:', displayNumber);
+        } else {
+          const lidShort = remoteJid.split('@')[0].slice(-8);
+          displayNumber = `LID:...${lidShort}`;
+          displayName = chat.pushName || chat.name || `Contato ${lidShort}`;
+          console.log('⚠️ LID não resolvido:', lidShort);
+        }
+      }
       
       if (!uniqueChats.has(remoteJid)) {
         uniqueChats.set(remoteJid, { 
           id: remoteJid, 
-          number: number,  // Agora é o JID completo (funciona para responder)
-          name: name 
+          number: displayNumber, 
+          name: displayName
         });
       }
     }
+    
     chats = Array.from(uniqueChats.values());
     console.log('Chats carregados:', chats.length);
     renderChatList();
@@ -161,7 +212,6 @@ async function loadChats() {
 
 function formatNumber(num) {
   if (!num) return '';
-  // Se for um JID, mostra de forma amigável
   if (num.includes('@')) {
     const clean = num.split('@')[0];
     if (clean.length === 11) return `+55 (${clean.slice(2,4)}) ${clean.slice(4,9)}-${clean.slice(9)}`;
@@ -169,6 +219,7 @@ function formatNumber(num) {
   }
   const c = num.replace(/\D/g, '');
   if (c.length === 11) return `+55 (${c.slice(2,4)}) ${c.slice(4,9)}-${c.slice(9)}`;
+  if (c.startsWith('LID')) return num;
   return c;
 }
 
@@ -189,11 +240,13 @@ function renderChatList() {
     const st = s === 'em_atendimento' ? 'Ativo' : 'Pendente';
     const bg = getColor(c.id);
     const active = currentChat?.id === c.id ? 'active' : '';
+    const displayNumber = formatNumber(c.number);
+    
     html += `<div class="conv-item ${active}" onclick="selectChat('${c.id.replace(/'/g,"\\'")}')">
       <div class="avatar" style="background:${bg}">${c.name.substring(0,2).toUpperCase()}</div>
       <div class="conv-info">
         <div class="conv-name">${escapeHtml(c.name)}</div>
-        <div class="conv-number">${escapeHtml(formatNumber(c.number))}</div>
+        <div class="conv-number">${escapeHtml(displayNumber)}</div>
         <div style="margin-top:4px"><span class="badge ${sc}">${st}</span></div>
       </div>
     </div>`;
@@ -217,9 +270,7 @@ async function selectChat(id) {
   document.getElementById('headerAvatar').style.background = getColor(chat.id);
   document.getElementById('headerAvatar').textContent = chat.name.substring(0,2).toUpperCase();
   
-  // Limpa o campo manual para evitar confusão
   document.getElementById('manualNumber').value = '';
-  
   document.getElementById('messagesArea').innerHTML = '<div class="loading"><div class="spin"></div><br>Carregando...</div>';
   await loadMessages(chat.id);
   renderChatList();
@@ -256,7 +307,6 @@ async function loadMessages(chatId) {
   } catch(err) { console.error(err); }
 }
 
-// FUNÇÃO DE ENVIO CORRIGIDA - Conforme documentação da Evolution API
 async function sendMessage() {
   const input = document.getElementById('messageInput');
   const text = input.value.trim();
@@ -265,7 +315,6 @@ async function sendMessage() {
   let numberToSend = '';
   let manualNumber = document.getElementById('manualNumber').value.trim();
   
-  // PRIORIDADE 1: Número digitado manualmente (para iniciar nova conversa)
   if (manualNumber) {
     let cleanNumber = manualNumber.replace(/\D/g, '');
     if (!cleanNumber.startsWith('55') && cleanNumber.length === 11) {
@@ -274,9 +323,8 @@ async function sendMessage() {
     numberToSend = cleanNumber;
     console.log('📤 Enviando para número manual:', numberToSend);
   } 
-  // PRIORIDADE 2: Conversa selecionada (usando o remoteJid completo)
   else if (currentChat) {
-    numberToSend = currentChat.id; // Envia o JID completo (funciona!)
+    numberToSend = currentChat.id;
     console.log('📤 Enviando para JID da conversa:', numberToSend);
   } 
   else {
@@ -286,13 +334,7 @@ async function sendMessage() {
   
   try {
     const encoded = encodeURIComponent(INSTANCE);
-    const body = { 
-      number: numberToSend, 
-      text: text, 
-      delay: 1200 
-    };
-    
-    console.log('📦 Body enviado:', body);
+    const body = { number: numberToSend, text: text, delay: 1200 };
     
     const response = await fetch(`${BASE_URL}/message/sendText/${encoded}`, {
       method: 'POST',
@@ -301,8 +343,6 @@ async function sendMessage() {
     });
     
     const result = await response.json();
-    console.log('📥 Resposta:', result);
-    
     if (!response.ok) throw new Error(result.message || result.error || 'Erro');
     
     input.value = '';
@@ -315,7 +355,6 @@ async function sendMessage() {
     container.innerHTML += `<div class="message out">${escapeHtml(text)}</div>`;
     setTimeout(scrollToBottom, 100);
     
-    // Recarrega mensagens e chats
     setTimeout(() => loadChats(), 2000);
     if (currentChat) setTimeout(() => loadMessages(currentChat.id), 2000);
   } catch(err) { 
