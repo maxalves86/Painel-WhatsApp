@@ -162,7 +162,6 @@ function formatNumber(num) {
   if (!num) return '';
   const c = num.replace(/\D/g, '');
   if (c.length === 11) return `+55 (${c.slice(2,4)}) ${c.slice(4,9)}-${c.slice(9)}`;
-  if (c.length === 13) return `+${c.slice(0,2)} (${c.slice(2,4)}) ${c.slice(4,9)}-${c.slice(9)}`;
   return c;
 }
 
@@ -260,6 +259,7 @@ async function sendMessage() {
   let recipientType = 'number';
   let manualNumber = document.getElementById('manualNumber').value.trim();
   
+  // PRIORIDADE: número manual
   if (manualNumber) {
     recipient = manualNumber.replace(/\D/g, '');
     if (!recipient.startsWith('55') && recipient.length === 11) {
@@ -268,6 +268,7 @@ async function sendMessage() {
     recipientType = 'number';
     console.log('📤 Enviando para número manual:', recipient);
   } 
+  // SE NÃO TIVER MANUAL, USA O CHAT SELECIONADO (LID)
   else if (currentChat) {
     recipient = currentChat.id;
     recipientType = 'jid';
