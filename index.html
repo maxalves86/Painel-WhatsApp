@@ -39,6 +39,7 @@ body{font-family:'Segoe UI',sans-serif;background:#f0f2f5;height:100vh;overflow:
 .message.out{background:#dcf8c6;align-self:flex-end}
 .message.in{background:#fff;align-self:flex-start;border:1px solid #ddd}
 .input-area{padding:12px;background:#fff;border-top:1px solid #ddd}
+.manual-number-input{width:100%;padding:10px;margin-bottom:10px;border:1px solid #ddd;border-radius:20px;font-size:14px}
 .input-row{display:flex;gap:8px}
 .input-row textarea{flex:1;padding:10px;border:1px solid #ddd;border-radius:20px;resize:none;font-family:inherit}
 .input-row button{background:#075e54;color:#fff;border:none;border-radius:20px;padding:0 20px;cursor:pointer}
@@ -78,6 +79,8 @@ body{font-family:'Segoe UI',sans-serif;background:#f0f2f5;height:100vh;overflow:
     </div>
     <div class="messages" id="messagesArea"><div class="empty-state">💬 Selecione uma conversa</div></div>
     <div class="input-area" id="inputArea" style="display:none">
+      <!-- CAMPO MANUAL PARA DIGITAR O NÚMERO -->
+      <input type="text" id="manualNumber" class="manual-number-input" placeholder="📱 Digite o número manualmente (ex: 5511988887777)">
       <div class="input-row">
         <textarea id="messageInput" placeholder="Digite sua mensagem..." rows="2" onkeydown="if(event.key=='Enter'&&!event.shiftKey){event.preventDefault();sendMessage()}"></textarea>
         <button onclick="sendMessage()">Enviar 📤</button>
@@ -121,30 +124,6 @@ async function apiRequest(endpoint, method = 'POST', body = null) {
   return data;
 }
 
-// FUNÇÃO CORRIGIDA: Extrai o número REAL do WhatsApp
-function extractRealNumber(chat) {
-  // 1ª tentativa: remoteJidAlt (tem o número verdadeiro)
-  if (chat.lastMessage?.key?.remoteJidAlt) {
-    const altJid = chat.lastMessage.key.remoteJidAlt;
-    const number = altJid.split('@')[0].replace(/\D/g, '');
-    console.log('📱 Número real via remoteJidAlt:', number);
-    return number;
-  }
-  
-  // 2ª tentativa: remoteJid normal se for @s.whatsapp.net
-  const remoteJid = chat.remoteJid || chat.id || chat.jid;
-  if (remoteJid && (remoteJid.includes('@s.whatsapp.net') || remoteJid.includes('@c.us'))) {
-    const number = remoteJid.split('@')[0].replace(/\D/g, '');
-    console.log('📱 Número real via remoteJid:', number);
-    return number;
-  }
-  
-  // 3ª tentativa: Se for LID, tenta extrair de outra forma
-  const number = remoteJid?.split('@')[0].replace(/\D/g, '') || '';
-  console.log('⚠️ Usando número do LID:', number);
-  return number;
-}
-
 async function loadChats() {
   try {
     const encoded = encodeURIComponent(INSTANCE);
@@ -160,30 +139,27 @@ async function loadChats() {
       const remoteJid = chat.remoteJid || chat.id || chat.jid;
       if (!remoteJid) continue;
       
-      // CORREÇÃO: Extrai o número REAL usando a função
-      const realNumber = extractRealNumber(chat);
-      const name = chat.pushName || chat.name || chat.senderName || formatNumber(realNumber);
+      let number = remoteJid.split('@')[0].replace(/\D/g, '');
+      let name = chat.pushName || chat.name || chat.senderName || number;
       
       if (!uniqueChats.has(remoteJid)) {
         uniqueChats.set(remoteJid, { 
           id: remoteJid, 
-          number: realNumber,  // Agora é o número REAL!
+          number: number, 
           name: name 
         });
       }
     }
     chats = Array.from(uniqueChats.values());
-    console.log('Chats carregados:', chats);
+    console.log('Chats carregados:', chats.length);
     renderChatList();
-    if(chats.length === 0) showToast('Nenhuma conversa');
-  } catch(err) { console.error(err); showToast(`Erro: ${err.message}`); }
+  } catch(err) { console.error(err); }
 }
 
 function formatNumber(num) {
   if (!num) return '';
   const c = num.replace(/\D/g, '');
   if (c.length === 11) return `+55 (${c.slice(2,4)}) ${c.slice(4,9)}-${c.slice(9)}`;
-  if (c.length === 13 && c.startsWith('55')) return `+55 (${c.slice(2,4)}) ${c.slice(4,9)}-${c.slice(9,13)}`;
   return c;
 }
 
@@ -231,6 +207,12 @@ async function selectChat(id) {
   document.getElementById('detailNumber').textContent = formatNumber(chat.number);
   document.getElementById('headerAvatar').style.background = getColor(chat.id);
   document.getElementById('headerAvatar').textContent = chat.name.substring(0,2).toUpperCase();
+  
+  // Preenche o campo manual com o número do chat (se tiver)
+  if (chat.number && chat.number.length >= 10) {
+    document.getElementById('manualNumber').value = chat.number;
+  }
+  
   document.getElementById('messagesArea').innerHTML = '<div class="loading"><div class="spin"></div><br>Carregando...</div>';
   await loadMessages(chat.id);
   renderChatList();
@@ -258,14 +240,22 @@ async function loadMessages(chatId) {
 }
 
 async function sendMessage() {
-  if (!currentChat) { showToast('Selecione uma conversa'); return; }
-  
   const input = document.getElementById('messageInput');
   const text = input.value.trim();
-  if (!text) return;
+  if (!text) { showToast('Digite uma mensagem'); return; }
   
-  // CORREÇÃO: Usa o número REAL que extraímos
-  let cleanNumber = currentChat.number.replace(/\D/g, '');
+  // PRIORIDADE: Usa o número digitado MANUALMENTE
+  let cleanNumber = document.getElementById('manualNumber').value.trim();
+  
+  if (!cleanNumber) {
+    showToast('Digite um número no campo acima (ex: 5511988887777)');
+    return;
+  }
+  
+  // Remove tudo que não é número
+  cleanNumber = cleanNumber.replace(/\D/g, '');
+  
+  // Adiciona 55 se necessário
   if (!cleanNumber.startsWith('55') && cleanNumber.length === 11) {
     cleanNumber = '55' + cleanNumber;
   }
@@ -282,23 +272,22 @@ async function sendMessage() {
     });
     
     const result = await response.json();
-    console.log('📥 Resposta da API:', result);
+    console.log('📥 Resposta:', result);
     
-    if (!response.ok) throw new Error(result.message || result.error || 'Erro ao enviar');
+    if (!response.ok) throw new Error(result.message || result.error || 'Erro');
     
     input.value = '';
     showToast('Mensagem enviada! ✅');
     
-    // Adiciona mensagem na tela imediatamente
+    // Adiciona na tela
     const container = document.getElementById('messagesArea');
     if (container.innerHTML.includes('Nenhuma')) container.innerHTML = '';
     container.innerHTML += `<div class="message out">${escapeHtml(text)}</div>`;
     container.scrollTop = container.scrollHeight;
     
-    setTimeout(() => loadMessages(currentChat.id), 2000);
-    setTimeout(() => loadChats(), 3000);
+    setTimeout(() => loadChats(), 2000);
   } catch(err) { 
-    console.error('❌ Erro detalhado:', err);
+    console.error('❌ Erro:', err);
     showToast(`Erro: ${err.message}`); 
   }
 }
